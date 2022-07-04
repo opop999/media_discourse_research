@@ -50,6 +50,7 @@ docs/fb_cookies_1.json
 1.data_sources/twitter/data/*.rds
 1.data_sources/twitter/data/*.feather
 
-
 # Large models
 4.data_analysis/word_embeddings/data/models
+4.data_analysis/sentiment_analysis/data/model
+
