@@ -1,0 +1,205 @@
+---
+title: "Migration Discourse Through a Multidisciplinary Prism: <br><br> The analysis of 888 000 Czech media articles from 2015–2022 using computational linguistics and communication"
+author: |
+        | Ondrej Pekacek
+        | Charles University
+        |
+        | Irene Elmerot
+        | Stockholm University
+        |
+date: | 
+      | June 8, 2022
+      | Computational Communication Science Lab
+      | University of Vienna
+      
+output:
+  revealjs::revealjs_presentation:
+    self_contained: false
+    theme: serif
+    css: style.css
+    center: false
+    transition: slide
+    reveal_plugins: ["chalkboard"]
+    reveal_options:
+      slideNumber: true
+      width: 1920
+      height: 1080
+      chalkboard:
+        theme: whiteboard
+bibliography: references_vienna.bib
+csl: apa.csl
+---
+
+# How the project came about and why we cooperate
+
+* Both interested in similar questions in the context of migration discourse
+
+* Spring 2021: Course in statistics for corpus linguistics with R at Charles University
+
+* Combination of Sociology, Linguistics, Political Communication
+
+* Inspiration for Irene:
+  + Part of research school "Language and Power"
+  + BA/MA theses on similar issues
+  + Othering in comparison: the lemmata for Roma, Vietnamese and Ukrainian in Czech media after 1989 [@elmerot_dirtbags_2019].
+  + Othering in world conflicts: Muslims and Arabs in Czech media after 1989 [@elmerot_constructing_2022].
+
+* Inspiration for Ondrej: 
+  + COST Populist Political Communication in Europe @reinemann_event-_2019
+  + H2020 OPTED: Citizens Produced Political Text (CPPT) project coder
+  + Transparency International CZ: 2021 pre-election monitoring end-to-end data pipeline 
+ 
+* Kick-off November 2021: OEAD's AKTION research stay at the Department of Communication
+
+# Article that inspired the project start [@moore2018]
+
+>
+> There are significant differences in the level of variation within national press systems. <br><br>
+> The rise of the far-right has been reflected in uneven media coverage. <br><br>
+> The local context is vital in shaping how news is reported. <br><br>
+
+# Research design considerations
+
+* Media text is mediated = likely easier to find frames and topics than from e.g. tweets.
+
+* Discourse about refugees, asylum seekers, immigrants, and migrants -- RASIM, following @baker_useful_2008, has been thoroughly studied in English.
+
+* Printed news media usually address their “ideal subject” [@fairclough_language_2015]: in the Czech case a small population of white Europeans, without a tradition of receiving non-European refugees.
+
+* Czech media has no clear “left-wing” and “right-wing” papers, hence need some explanation. Studies published in English complete existing research.
+
+* Czech (online) media strongly affected by pro-Russian and “anti-systemic” forces [@gregor_challenging_2021].
+
+* Corpus linguistics makes it possible to draw conclusions from a larger body of material and/or time span, while avoiding certain researcher biases.
+
+* Czech is a language with 14 different forms of each nominal word (such as *refugee*, *fleeing* or *she/he/it*).
+
+
+
+
+
+# Purpose of our study
+
+* Very little scholarly quantitative attention to migration communication in Czech media (aside from @heidenreich2019 and @reinemann_event-_2019).
+
+* Importance of understanding the "alternative" media [@Holt2019], prominent in Czech media landscape (such as "Parlamentní Listy" outlet) [@murru_rise_2019].
+
+* Main RQ: 
+  + **How has the quality and framing of international migration differed across the Czech mainstream and alternative media in the 2015-2022 period?**
+
+* Additional RQ: 
+  + **Comparing coverage of Syrian & Afghan refugees vs 2022 Ukrainian refugees.**
+
+* First exploratory analyses presented here today.
+
+# Our data pre-processing decisions
+
+* Extraction of ~900,000 migration-related articles using Newton Media Archive API 
+
+* Search string from COST project [@reinemann_event-_2019]
+
+* Basic pre-processing/cleaning
+
+* Lemmatization using UDPIPE 2 Czech PDT model (work in progress) [@straka-2018-udpipe]
+  + currently processed October-December 2015 & February-April 2022
+  + these ~124 thousand articles form base for our text analyses
+  
+* Additional datasets:
+  + monthly counts of all of the published content across all ~4000 media
+  + media type labelling (work in progress) (Cvrcek & Prochazka, 2020)
+  + this enables us to distinguish mainstream and "alternative" media
+
+# Analysis 1: What amount of attention is dedicated to migration in the Czech media?
+
+## {data-background-image="graphics/migration_content_proportion.png"}
+
+## {data-background-image="graphics/migration_content_proportion_by_media_type.png"}
+
+# Analysis 2: What are the most prominent entities appearing in the Czech migration coverage? 
+
+* Using state-of-the-art Named Entity Model for Czech language: NameTag 2 [@StrakovaStrakaHajicACL2019]
+* Data analyzed:October-December 2015 & February-April 2022
+* Features:
+   + Recognizes ~50 entity categories, some very specific ("sport score")
+   + Uses BERT's embeddings
+   + Recognizes nested entities *Usti nad Labem* (Czech city name) + *Labe* (Elbe river)
+   
+* However, some challenges: 
+  + We used it on non-lemmatized dataset, because...
+  + Problem with recognition of multi-word lemma
+  + For example: *Český* + *republika* (Czech (ADJ) republic (NOUN)) recognized as separate entities
+  + Might be an issue with highly-inflectional languages, such as Czech?
+
+## {data-background-image="graphics/ner_2015.png"}
+
+## {data-background-image="graphics/ner_2022.png"}
+
+# Analysis 3: What are the most similar words to migration-related terms?
+
+* Using Wang2Vec model @Ling:2015:naacl
+  + Extension of Word2Vec
+  + Chosen for comparability with Korpus.cz model based on referential corpora of Czech language (SYN v8)
+  + Parameters informed by @Word2Vec2021
+  + Vector size: 300, window: 5, skipngram, iterations: 20
+ 
+* Data Analyzed:
+  + Lemmatized sentences (UDPIPE) from October-December 2015 & February-April 2022
+  + Choosing two lemma: "Migrant" vs "Refugee" (most common lemma in the entire corpus)
+
+## {data-background-image="graphics/embedding_2015_austria.png"}
+
+## {data-background-image="graphics/embedding_2022_austria.png"}
+
+## {data-background-image="graphics/embedding_2015.png"}
+
+## {data-background-image="graphics/embedding_2022.png"}
+
+# Wrap-up: Next steps & Possible future analyses
+
+* Conference *The Power(s) of Language*, Stockholm University, June 2022
+
+* Make repository public (after proprietary content removed)
+  + https://github.com/opop999/media_discourse_research
+  
+* Difference between framing of the refugees across media types?
+  + Collocations & Concordances (KWIC)
+  + LDA Topic Modelling
+
+* Which media were most active in spreading disinformation about migration?
+* To what extent was the media discourse similar to parliamentary speeches?
+  + Document similarity (Doc2Vec)
+
+# Extra Visualizations
+
+## {data-background-image="graphics/all_migration_content.png"}
+
+## {data-background-image="graphics/frequencies_terms_alternative.png"}
+
+## {data-background-image="graphics/frequencies_terms_mainstream.png"}
+
+## {data-background-image="graphics/collocs_2015.png"}
+
+## {data-background-image="graphics/collocs_2022.png"}
+
+
+# Contact us :)
+
+* Irene:
+  + Department of Slavic and Baltic Studies Finnish Dutch and German, Stockholm University
+  + researchgate.net/profile/Irene_Elmerot
+  + irene.elmerot@slav.su.se 
+
+* Ondrej:
+  + Institute of Sociological Studies, Faculty of the Social Sciences, Charles University
+  + ondrej.pekacek@fsv.cuni.cz
+  + GitHub repository: https://github.com/opop999
+
+# References
+
+
+  
+  
+
+
+
+ 

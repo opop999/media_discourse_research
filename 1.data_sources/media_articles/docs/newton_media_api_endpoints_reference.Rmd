@@ -1,0 +1,411 @@
+# Access the database of Newton Media's Archive through API access
+
+# Swagger file with API documentation https://api.newtonmedia.eu/swagger/ui/index#/
+
+## 1. Loading necessary R packages to access the API
+
+```{r}
+# Package names
+packages <- c("httr", "jsonlite", "dplyr")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+api_token <- Sys.getenv("NEWTON_TOKEN")
+
+
+```
+
+## 2. Set Login Parameters for API authentication
+
+```{r}
+### Two ways to do this
+### a. Create .Renviron file in the project folder. Add environmental variable in the following manner:
+### NEWTON_LOGIN=test.email@gmail.com (without parentheses like in R). Do the same thing for password
+### and restart R. NEWTON_LOGIN and NEWTON_PASS should be ready to be retrieved in R.
+
+### b. In your console, set the login&pass env. variables with Sys.setenv() function like:
+### Sys.setenv("NEWTON_LOGIN" = "test.email@gmail.com") and similarly for password. Parentheses needed.
+login <- Sys.getenv("NEWTON_LOGIN")
+password <- Sys.getenv("NEWTON_PASS")
+
+# Let's test whether the login and password was imported correctly
+print(paste("My login for Newton API is:", login, "and my password is:", password))
+
+## 3. Authenticate to the API with login and password. We should receive a token to be used during the session.
+auth_request <- httr::VERB(verb = "POST",
+                           url = "https://api.newtonmedia.eu/v2/user/login", 
+                           httr::add_headers(`Accept` = "application/json", `Content-Type` = "application/json"),
+                           encode = "json",
+                           body = paste0('{"Login": "', as.character(login), '", "Password": "', as.character(password), '"}')
+                          ) %>% content(as = "parsed")
+
+print(auth_request)
+
+# Extract the received token from the list
+api_token <- auth_request[["authenticationToken"]]
+# We could also save the value of the token with Sys.setenv/.Renviron and load it like this
+# api_token <- Sys.getenv("NEWTON_TOKEN")
+
+```
+
+## 3. Retrieve the list of media outlets in the NEWTON database
+
+```{r}
+## Ideally, we should get a JSON object back, which we could parse to R list using content()
+media_list <- httr::VERB(verb = "GET",
+                         url = "https://api.newtonmedia.eu/v2/archive/archives/source",
+                         httr::add_headers(Accept = "application/json",
+                                           Authorization = paste("token", as.character(api_token)))
+                        ) %>% content(as = "parsed")
+
+print(media_list)
+
+# Transforming the list to dataframe while renaming the columns
+media_list_df <- bind_rows(media_list) %>%
+                 transmute(media_name = Name,
+                           newton_id = as.character(Id))
+
+# We can try to save the dataframe to a .RDS file
+saveRDS(object = media_list_df, file = "1.data_sources/media_articles/newton_media_list_of_outlets.rds")
+```
+
+## OPTIONAL STEPS: QUERY THE API TO GET EXTRA INFORMATION REGARDING USAGE, COUNTRIES COVERED AND MEDIA TYPES
+
+```{r}
+
+info_list <- list()
+
+## Optional 1. Query user's profile and permissions
+info_list[["usr_prof"]] <- httr::VERB(verb = "GET",
+                                      url = "https://api.newtonmedia.eu/v2/user",
+                                      httr::add_headers(Accept = "application/json",
+                                                        Authorization = paste("token", as.character(api_token)))) %>% content(as = "parsed")
+
+## Optional 2. Which countries and media types are available? What are their codes?
+info_list[["count_of_media"]] <- httr::VERB(verb = "GET",
+                                       url = "https://api.newtonmedia.eu/v2/archive/filter/enums",
+                                       httr::add_headers(Accept = "application/json",
+                                                         Authorization = paste("token", as.character(api_token)))) %>% content(as = "parsed")
+
+
+## Optional 3. What are the time intervals for media search?
+info_list[["interval"]] <- httr::VERB(verb = "GET",
+                                       url = "https://api.newtonmedia.eu/v2/archive/filter/interval",
+                                       httr::add_headers(Accept = "application/json",
+                                                         Authorization = paste("token", as.character(api_token)))) %>% content(as = "parsed")
+
+
+## Optional 4. What are the sorting options?
+info_list[["sorting"]] <- httr::VERB(verb = "GET",
+                                       url = "https://api.newtonmedia.eu/v2/archive/filter/sorting",
+                                       httr::add_headers(Accept = "application/json",
+                                                         Authorization = paste("token", as.character(api_token)))) %>% content(as = "parsed")
+## Optional 5. What are the default settings?
+
+info_list[["default_settings"]] <- httr::VERB(verb = "GET",
+                                       url = "https://api.newtonmedia.eu/v2/archive/filter/defaultsettings",
+                                       httr::add_headers(Accept = "application/json",
+                                                         Authorization = paste("token", as.character(api_token)))) %>% content(as = "parsed")
+
+
+
+
+```
+
+## 4. Extract articles from the Newton Archive using older API Endpoint (GET Method)
+### Notes
+- URL: https://api.newtonmedia.eu/swagger/ui/index#!/archive/Archive_SearchByUserArchive
+- For each request, we are flying blind. We do not know how many pages have been returned.
+- We only know whether the request came back empty or not thanks to its header "content-length"
+- The search string seems to work here only in the decoded version
+- We **cannot** filter by media type or country. Only by media outlet id
+- We are **not** getting some extra information that is part of the new API endpoint
+- We could use it with a while loop, getting articles from 2015 today by batches
+- orderBy.values parameter does not work (Swagger error) 
+- The default order is sorting by score(Relevance of search string?). We can also use orderBy = "PublishDate_desc"
+- Could lead to duplicates if same data range is called more times
+- Could we get the media type from some other endpoint to combine source id?
+
+```{r}
+old_api_list = list()
+
+query_string <- "běženec* OR běženk* OR imigrant* OR migra* OR imigra* OR přistěhoval* OR uprchl* OR utečen* OR azylant*"
+media_id <- "2971" 
+min_date <- "2022-01-19"
+max_date <- "2022-01-21"
+page_n <- 1
+
+# Using the old API endpoint to get raw response
+response_raw <- httr::VERB(
+  verb = "GET",
+  url = "https://api.newtonmedia.eu/v2/archive/archives/search",
+  httr::add_headers(
+    Accept = "application/json",
+    Authorization = paste("token", as.character(api_token))
+  ),
+  query = list(
+    page = page_n,
+    size = "100",
+    # query = query_string,
+    sourceIds = media_id,
+    from = min_date,
+    to = max_date,
+    orderBy = "PublishDate_desc"
+  )) 
+
+# Does the header of the response tell us that there is some content on this page?
+response_raw$headers$`content-length`
+
+# Add the transformed content to the list of media articles with a name that reflects page and media id
+old_api_list[[paste0(page_n)]] <- content(response_raw, as = "parsed")
+
+# When we are done, we can transform the list to a dataframe
+df_old_api <- bind_rows(old_api_list)
+
+
+```
+
+
+## 5a. Extract articles from the Newton Archive using newer API Endpoint (POST Method)
+
+### GET ARTICLE COUNT
+
+NOTES: 
+- https://api.newtonmedia.eu/swagger/ui/index#!/archive_mobile_application/ArchiveMobileApp_SearchCount
+- Advanced filtering possible, including country ids (SK 2, CZ 1) and media types
+- What is media type 1? It is not a default option, but gives many more data back! Safer to explicitly specify [2,3,4,5]
+- *Issue with filtering by media ids* > *FIXED* > *USE array [] combined with "historic source id" which can be accessed with /archive/filter/sourceautocomplete *
+- Duplicities are regional duplicities (turned off by default in the old api)
+
+```{r}
+
+response_raw <-  httr::VERB(
+  verb = "POST",
+  url = "https://api.newtonmedia.eu/v2/archive/searchCount",
+  httr::add_headers(
+    Accept = "application/json",
+    `Content-Type` = "application/json",
+    Authorization = paste("token", as.character(api_token))),
+  encode = "json",
+  body = paste0('{ 
+   "QueryText": "běženec* OR běženk* OR imigrant* OR migra* OR imigra* OR přistěhoval* OR uprchl* OR utečen* OR azylant*", 
+   "DateFrom": "2015-01-01T00:00:00", 
+   "DateTo": "2021-11-30T00:00:00", 
+   "showDuplicities": true,
+   "CountryIds": [1],
+   "AllowedMediaTypeIds": [2,3,4,5]
+ }')
+)
+
+content(response_raw, as = "parsed")
+
+```
+
+## 5b. Extract articles from the Newton Archive using newer API Endpoint (POST Method)
+
+### GET ARTICLES (not full ones)
+NOTES:
+- https://api.newtonmedia.eu/swagger/ui/index#!/archive_mobile_application/ArchiveMobileApp_SearchByQuery
+- We get page numbers as a part of the response! Plus the page size limit is at least 10000
+- We only get back annotation, not full text (probably because of phone-like behavior)
+- *Issue with filtering by media ids* > *FIXED* > *USE array [] combined with "historic source id" which can be accessed with v2/archive/filter/sourceautocomplete *
+- We can sort by score and date, but we do no see it as a variable in the response (unlike in the old one)
+- We do not get the MediaID for later matching, but we can match on name
+- We can also narrow the results using the section/rubric of a media outlet (use together with v2/archive/filter/sectionautocomplete)
+
+```{r}
+
+media_articles_new_api = list()
+
+response_raw <-  httr::VERB(
+  verb = "POST",
+  url = "https://api.newtonmedia.eu/v2/archive/search",
+  httr::add_headers(
+    Accept = "application/json",
+    `Content-Type` = "application/json",
+    Authorization = paste("token", as.character(api_token))),
+  encode = "json",
+  body = paste0('{ 
+   "QueryText": "běženec* OR běženk* OR imigrant* OR migra* OR imigra* OR přistěhoval* OR uprchl* OR utečen* OR azylant*", 
+   "DateFrom": "2021-11-01T00:00:00", 
+   "DateTo": "2021-11-30T00:00:00", 
+   "showDuplicities": true,
+   "CountryIds": [1],
+   "AllowedMediaTypeIds": [2,3,4,5],
+   "sourceHistoryIds": [300],
+   "Sorting": 2,
+   "CurrentPage": 1,
+   "PageSize": 10000
+ }')
+)
+
+# response length check
+response_raw$headers$`content-length`
+
+response_parsed <- content(response_raw, as = "parsed")
+
+print(paste("The current page is:", response_parsed$pageIndex, "and the total amount of pages for this query is:", ceiling(response_parsed$totalCount/response_parsed$pageSize)))
+
+df_new_api <- bind_rows(response_parsed$articles) %>% distinct(code, .keep_all = TRUE) # strangely, without using distinct, we get duplicates in df
+
+```
+
+## 5c. Extract articles from the Newton Archive using newer API Endpoint (GET Method)
+
+### GET FULL ARTICLES
+NOTES:
+-https://api.newtonmedia.eu/swagger/ui/index#!/archive_mobile_application/ArchiveMobileApp_ArticleDetail
+-We can only get one article at a time, which is more time consuming than old api
+-We need ID of the article, Date of publication and search query id in which it appeared (previous step)
+-Are we really getting some extra info compared to the old API?
+
+```{r}
+list_of_articles <- list()
+
+response_raw <- httr::VERB(
+  verb = "GET",
+  url = "https://api.newtonmedia.eu/v2/archive/articles/P2RA21GI0001", # article code has to go to the url behind slash
+  httr::add_headers(
+    Accept = "application/json",
+    Authorization = paste("token", as.character(api_token))
+  ),
+  query = list(
+    publishDate = "2021-11-30T00:00:00",
+    searchHistoryId = "4647763"
+  )) 
+
+
+list_of_articles[[1]] <- content(response_raw, as = "parsed")
+
+```
+
+ADD TO THIS DOCUMENTATION
+
+```{r}
+
+## 2. Set Login Parameters for API authentication
+### Two ways to do this
+
+### a. Create .Renviron file in the project folder. Add environmental variable in the following manner:
+### NEWTON_LOGIN=test.email@gmail.com (without parentheses like in R). Do the same thing for password
+### and restart R. NEWTON_LOGIN and NEWTON_PASS should be ready to be retrieved in R.
+
+### b. In your console, set the login&pass env. variables with Sys.setenv() function like:
+### Sys.setenv("NEWTON_LOGIN" = "test.email@gmail.com") and similarly for password. Parentheses needed.
+
+login <- Sys.getenv("NEWTON_LOGIN")
+password <- Sys.getenv("NEWTON_PASS")
+
+# Let's test whether the login and password was imported correctly
+print(paste("My login for Newton API is:", login, "and my password is:", password))
+
+## 3. Authenticate to the API with login and password. We should receive a token to be used during the session.
+auth_request_content <- httr::VERB(verb = "POST",
+                           url = "https://api.newtonmedia.eu/v2/user/login", # Swagger file with API documentation https://api.newtonmedia.eu/swagger/ui/index#/
+                           httr::add_headers(`Accept` = "application/json", `Content-Type` = "application/json"),
+                           encode = "json",
+                           body = paste0('{"Login": "', as.character(login), '", "Password": "', as.character(password), '"}')
+                          ) %>% content(as = "parsed")
+
+print(auth_request)
+
+# Extract the received token from the list
+api_token <- auth_request_content[["authenticationToken"]]
+# We could also save the value of the token with Sys.setenv/.Renviron and load it like this
+# api_token <- Sys.getenv("NEWTON_TOKEN")
+
+## 4. Retrieve the list of media outlets in the NEWTON database
+## Ideally, we should get a JSON object back, which we could parse to R list using content()
+media_list <- httr::VERB(verb = "GET",
+                         url = "https://api.newtonmedia.eu/v2/archive/archives/source",
+                         httr::add_headers(Accept = "application/json",
+                                           Authorization = paste("token", as.character(api_token)))
+                        ) %>% content(as = "parsed")
+
+print(media_list)
+
+# Transforming the list to dataframe while renaming the columns
+media_list_df <- bind_rows(media_list) %>%
+                 transmute(media_name = Name,
+                           newton_id = as.character(Id))
+
+# We can try to save the dataframe to a .RDS file
+saveRDS(object = media_list_df, file = "1.data_sources/media_articles/newton_media_list_of_outlets.rds")
+
+media_articles = list()
+
+
+## 5. Extract articles from the Newton Archive
+media_articles[[media_id]]
+
+test <- httr::VERB(verb = "GET",
+  url = "https://api.newtonmedia.eu/v2/archive/archives/search",
+  httr::add_headers(
+    Accept = "application/json",
+    Authorization = paste("token", as.character(api_token))
+  ),
+  query = list(
+    page = page_n,
+    size = "100",
+    query = query_string,
+    sourceIds = media_id,
+    from = min_date,
+    orderBy.values = "PublishDate"
+  )
+) %>% content(as = "parsed")
+
+
+
+query_string <- "jana"
+media_id <- "3915"
+
+  "b%C4%9B%C5%BEenec%2A%20OR%20b%C4%9B%C5%BEenk%2A%20OR%20imigrant%2A%20OR%20migra%2A%20OR%20imigra%2A%20OR%20p%C5%99ist%C4%9Bhoval%2A%20OR%20uprchl%2A%20OR%20ute%C4%8Den%2A%20OR%20azylant%2A"
+min_date <- "2020-11-25"
+page_n <- 5
+
+
+test_df <- bind_rows(test)
+
+
+# OPTIONAL STEPS: QUERY THE API TO GET EXTRA INFORMATION REGARDING USAGE, COUNTRIES COVERED AND MEDIA TYPES
+
+info_list <- list()
+
+## Optional 1. Query user's profile and permissions
+info_list[["usr_prof"]] <- httr::VERB(verb = "GET",
+                                      url = "https://api.newtonmedia.eu/v2/user",
+                                      httr::add_headers(Accept = "application/json",
+                                                        Authorization = paste("token", as.character(api_token)))
+                                      ) %>% content(as = "parsed")
+
+print(info_list[["usr_prof"]])
+
+## Optional 2. Which countries and media types are available? What are their codes?
+info_list[["count_med"]] <- httr::VERB(verb = "GET",
+                                       url = "https://api.newtonmedia.eu/v2/archive/filter/enums",
+                                       httr::add_headers(Accept = "application/json",
+                                                         Authorization = paste("token", as.character(api_token)))
+                                      ) %>% content(as = "parsed")
+
+print(info_list[["count_med"]])
+
+
+## Optional 3. What are the time intervals for media search?
+info_list[["interval"]] <- httr::VERB(verb = "GET",
+                                       url = "https://api.newtonmedia.eu/v2/archive/filter/interval",
+                                       httr::add_headers(Accept = "application/json",
+                                                         Authorization = paste("token", as.character(api_token)))
+) %>% content(as = "parsed")
+
+print(info_list[["interval"]])
+
+
+```
+

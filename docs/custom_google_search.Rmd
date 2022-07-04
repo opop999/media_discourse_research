@@ -1,0 +1,82 @@
+---
+title: "Different Realities?"
+subtitle: "Migration coverage by different media types"
+output:
+  html_document:
+    theme: united
+    highlight: tango
+---
+
+<!-- Custom CSS -->
+```{css echo=FALSE}
+.flex-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  height: 100px;
+  width: 100%;
+
+}
+
+.input_text {
+  border: 1px solid grey;
+  height: 30px;
+  width: 100%;
+  margin: 20px 0px 10px 0px;
+  padding: 8px;
+  outline: 0;
+  font-size: 0.7em;
+  font-weight: bold;
+  box-shadow:0 0 8px 4px rgba(0,0,0,0.06);
+  border-radius:10px;
+}
+
+.input_submit {
+  padding:5px;
+  border:none;
+  margin: 0px 0px 10px 40%;
+  background-color:#606fc7;
+  color:#fff;
+  font-weight:500;
+  border-radius:10px;
+  width:20%;
+}
+
+.input_submit:hover {
+  background-color:#c7b860;
+}
+```
+
+<!-- JS script from Google to implement the custom search console -->
+```{js echo=FALSE, results='asis'}
+(function () {
+  var cx = "015489410908837164654:ary4gmncphk";
+  var gcse = document.createElement("script");
+  gcse.type = "text/javascript";
+  gcse.async = true;
+  gcse.src = "https://cse.google.com/cse.js?cx=" + cx;
+  var s = document.getElementsByTagName("script")[0];
+  s.parentNode.insertBefore(gcse, s);
+})();
+```
+
+<br>
+
+#### Searching with Google's Custom Search Engine
+
+Using our key migration-relevant terms combined with custom search engine created by [Nadační fond nezávislé žurnalistiky](https://nfnz.cz/nastroje/google/) enables us to see **different** versions of reality across seven Czech media types.
+
+<!-- Form with prefigured key migration-related terms -->
+<!-- Once button pressed, it launches a GET request with migration query -->
+<div class="flex-container">
+<form action="" method="GET">
+  <div><input class="input_text"  type="text" name="q" value="migrace OR imigrace OR migrant OR migrantka OR migrantky OR migranti OR imigrant OR imigrantka OR imigranti OR imigrantky OR uprchlík OR uprchlice OR uprchlíci"></div>
+  <div><input class="input_submit" type="submit" value="Submit search query"></div>
+  </form>
+</div>
+
+<!-- Element, which displays the results -->
+<br><br>
+<gcse:searchresults-only></gcse:searchresults-only>
+
+

@@ -1,0 +1,29 @@
+---
+title: "Everybody speaks, but who is being heard?"
+subtitle: "Media discourse on migration in the Czech Republic and its main protagonists"
+author: "Ondřej Pekáček, Irene Elmerot"
+date: "27 April 2022"
+output: pdf_document
+bibliography: references_stockholm.bib
+csl: apa.csl
+---
+
+## Abstract
+
+This contribution concerns the often-polarizing language around migration in the Czech Republic during and after the so-called European refugee crisis. Discourse concerning refugees, asylum seekers, immigrants, and migrants -- RASIM, following @baker_useful_2008 has been thoroughly studied, especially in an English language context. Aiming to add to the previously neglected research angle of Czech media, we conduct a discourse analysis of Czech media actors while also considering the context of the media ownership, media (anti)systematicity, and the proximity to the positioning of political parties.
+
+The Czech media landscape has experienced a profound transformation in the past decade. Mainstream outlets have been affected by ownership concentration, political pressure, and technological changes. At the same time, low entry barriers allowed the emergence of online and "alternative" journalism, which, perhaps surprisingly, has tended to be antagonistic, rather than supportive, towards marginalized communities [@jirak2020; @stetka2021; @moravec_robotic_2020]. In addition, the country has one of the lowest levels of media trust in Europe [@newman2021; @volek2018]. Following recent computational social science and corpus linguistics scholarship, we use extensive source material to investigate the evolution of discourse across time [@cvrcek_no_2021; @theocharis2021; @edelmann2020]. Previous studies within the Czech context have been primarily qualitative [@prchováhrzová2021; @kotiová2017] or relied on relatively few data points of comparison [@kluknavská2021; @chouliaraki2017]. Our data include the entire population of the media coverage of migration, consisting of more than 750,000 articles from the Czech press, online, TV, and radio, and "alternative" media outlets from January 2015 to May 2022.
+
+Our results uncover how polarization is used for self-positioning and antagonistic argumentation patterns in the RASIM discourse while exploring media (in)equilibrium between the dominant and marginalized voices in the public debate on migration. Finally, we aim to open a discussion on the challenges of conducting similar investigations in a comparative international context while accounting for diverse cultural-linguistic idiosyncrasies and power relations.
+
+## Authors' Biography
+
+Ondřej Pekáček is a Ph.D. candidate in Sociology at Charles University, Czech Republic. His work focuses on political communication in the public discourse surrounding salient topics such as migration in Central and Eastern Europe. As a part of his current research stay at the Department of Communication, University of Vienna, he is investigating the research opportunities in this area afforded by computational methods on the intersection of Big Data and Social Science. He has previously participated in the COST Action IS1308, resulting in a chapter in the Routledge volume *Communicating Populism*.
+
+Irene Elmerot is a Ph.D. candidate within the doctoral school "Language and Power" at Stockholm University, Sweden. Her thesis will be a study of linguistic othering in Czech printed media after 1989. She is a reviewer for *Journal of Language and Discrimination* and has published articles in *Slovo*, *Scando-Slavica*, *Journal of Linguistics/Jazykovedný časopis* as well as a chapter in the Routledge anthology *Discursive Approaches to Socio-political Polarization and Conflict*.
+
+\newpage
+
+## References
+
+\vspace{6pt}

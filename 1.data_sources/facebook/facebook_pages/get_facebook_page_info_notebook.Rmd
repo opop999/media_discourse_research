@@ -1,0 +1,18 @@
+
+```{python}
+from get_facebook_page_info import get_fb_pages_info
+
+get_fb_pages_info(fb_pages = list(r.facebook_acc_ids),
+                  fb_cookies = "fb_cookies_1.json",
+                  dir_name = "data_pages",
+                  dir_name_long = "1.data_sources/facebook/facebook_pages/data_pages")
+
+```
+
+```{r}
+library(arrow)
+
+# Load the feather dataset created in python to verify integrity
+test_of_df <- read_feather("data_pages/facebook_pages_info.feather")
+
+```

@@ -1,0 +1,210 @@
+---
+title: "Everybody speaks, but who is being heard? <br><br> Media discourse on migration in the Czech Republic and its main protagonists"
+author: |
+        | Irene Elmerot
+        | Stockholm University
+        |
+        | Ondrej Pekacek
+        | Charles University
+        |
+
+date: | 
+      | June 17, 2022
+      | The Power(s) of Language conference
+      | Stockholm University
+      
+output:
+  revealjs::revealjs_presentation:
+    self_contained: false
+    theme: serif
+    css: style.css
+    center: false
+    transition: slide
+    reveal_plugins: ["chalkboard"]
+    reveal_options:
+      slideNumber: true
+      width: 1920
+      height: 1080
+      chalkboard:
+        theme: whiteboard
+bibliography: references_stockholm.bib
+csl: apa.csl
+---
+
+# How the project came about?
+
+* Both interested in similar questions in the context of migration discourse. <br><br>
+
+* Spring 2021: Course *Statistics for Corpus Linguistics with R* at Charles University. <br><br>
+
+* Combination of Sociology, Linguistics, Computational Communication. <br><br>
+
+<!-- * Inspiration for Irene: -->
+<!--   + Part of research school "Language and Power" -->
+<!--   + BA/MA theses on similar issues -->
+<!--   + Othering in comparison: the lemmata for Roma, Vietnamese and Ukrainian in Czech media after 1989 [@elmerot_dirtbags_2019]. -->
+<!--   + Othering in world conflicts: Muslims and Arabs in Czech media after 1989 [@elmerot_constructing_2022]. -->
+
+<!-- * Inspiration for Ondrej:  -->
+<!--   + COST Populist Political Communication in Europe @reinemann2019 -->
+<!--   + H2020 OPTED: Citizens Produced Political Text (CPPT) project coder -->
+<!--   + Transparency International CZ: 2021 pre-election monitoring end-to-end data pipeline  -->
+ 
+* Kick-off November 2021: OEAD's AKTION research stay at the Department of Communication, University of Vienna.
+
+# @moore2018: Article, which inspired our project
+
+*Saving Refugees or Policing the Seas? How the national press of five EU member states framed news coverage of the migration crisis*
+
+<br><br>
+
+> 
+> Framing of migration by far-right actors spills over to mainstream outlets. <br><br>
+> Significant variations exist in the themes surrounding migration not only between countries but also within national media systems. <br><br>
+> The local context remains vital in understanding how migration is reported. <br><br>
+
+# Research design considerations: Discourse and linguistics
+
+* Potentially easier to identify frames and topics in media news texts than in short-form communication (social media posts). <br><br>
+
+* Discourse about refugees, asylum seekers, immigrants, and migrants -- RASIM (following @baker_useful_2008) thoroughly studied in English [@eberl2018]. <br><br>
+
+* Czech is a language with 14 different forms of each nominal word (such as *refugee*, *fleeing* or *she/he/it*). <br><br>
+
+* Corpus linguistics enables drawing conclusions from a larger body of material and/or time span, while avoiding certain researcher biases. 
+
+# Research design considerations: Czech media context
+
+* News media usually address their “ideal subject” [@fairclough_language_2015]. In the Czech case:
+  + a relatively small and homogeneous population of white Europeans
+  + without a tradition of receiving non-European refugees <br><br>
+
+* We have a problem:
+  + We know: media source choice matters for attitudes towards migration [@stetka2021]
+  + But: little quantitative understanding of the content of the migration discourse (aside from @heidenreich2019 and @reinemann2019) <br><br>
+
+* **Protagonist 1**: Mainstream media
+  + "oligarchization" (media concentration), commercialization & political pressures [@dobekostrowska2019]
+  + mirroring political developments [@cirhan2020] - lack of clear left-right ideological cleavage
+  + case of *MF Dnes* <br><br>
+
+* **Protagonist 2**: "Alternative" media
+  + antagonism & "anti-systemicity" [@Holt2019]
+  + ownership non-transparency, dubious editorial practices [@murru_rise_2019]
+  + affected by pro-Russian narratives [@gregor_challenging_2021]
+  + case of *Parlamentní Listy* 
+
+# {data-background-image="graphics/pa_listy.jpg"}
+
+# Purpose of our study
+
+* Main RQ: 
+  + **How has the discourse of international migration differed across the Czech mainstream and alternative media in the 2015-2022 period?** <br><br>
+
+* Additional RQ: 
+  + **How does the coverage of the predominantly Syrian, Afghan, and Iraqi refugees in the post-2015 period compare with Ukrainian refugees in 2022?** <br><br>
+
+* First exploratory analyses presented here today.
+
+# Our data pre-processing decisions
+
+* Extraction of ~900,000 migration-related articles using Newton Media Archive API. <br><br>
+
+* Lemmatization with UDPIPE model [@straka-2018-udpipe].
+  + currently processed October-December 2015 & February-April 2022 (~124 thousand articles)
+  + periods with highest influx of refugees <br><br>
+  
+* Complementary datasets:
+  + monthly counts of all of the published content across all ~4000 media
+  + media type labels (Cvrcek & Prochazka, 2020) enable us to distinguish mainstream and "alternative" media
+
+# Analysis 1: What amount of attention is paid to migration?
+
+## {data-background-image="graphics/migration_content_proportion.png"}
+
+## {data-background-image="graphics/migration_content_proportion_by_media_type.png"}
+
+# Analysis 2: What are the most prominent entities? 
+
+* Using NameTag 2: named entity recognition (NER) model for Czech language [@StrakovaStrakaHajicACL2019]. <br><br>
+
+* Features & Limitations:
+   + distinguishes ~50 entity categories, some very specific ("sport score")
+   + recognizes nested entities *Ustí nad Labem* (Czech city name) + *Labe* (Elbe river)
+   + however, problem with *Český* + *republika* (lemmatized Czech + Republic) 
+   + issue with highly-inflectional languages, such as Czech?
+
+## {data-background-image="graphics/ner_2015.png"}
+
+## {data-background-image="graphics/ner_2022.png"}
+
+# Analysis 3: What are the most similar words to migration-related terms?
+
+* Using Wang2Vec model [@ling2015], extension of Word2Vec [@mikolov13].
+  + parameters informed by @Word2Vec2021
+  + trained with lemmatized sentences (UDPIPE)
+  + chosen for comparability with Czech National Corpus corpora <br><br>
+
+* Analysis:
+  + choosing two lemmata: *migrant* & *uprchlík* 
+  + "migrant" & "refugee" were most common in our corpus
+
+## {data-background-image="graphics/embedding_2015.png"}
+
+## {data-background-image="graphics/embedding_2022.png"}
+
+# Wrap-up: Next steps & Possible future analyses
+
+* Make repository public (after proprietary content removed)
+  + https://github.com/opop999/media_discourse_research <br><br>
+  
+* Difference between discourse framing of the refugees across media types?
+  + collocations & concordances (KWIC) [@benoit2018]
+  + LDA topic modeling [@blei2003] <br><br>
+
+* Which media were most active in spreading disinformation about migration?
+  To what extent was the media discourse similar to political actors' speeches?
+  + document similarity (Doc2Vec) [@le2014] <br><br>
+  
+* How did the media types differ in semantic grouping and sentiment?
+  + UCREL Semantic Analysis System (USAS) [@piao2015]
+  + Czech subjectivity lexicon (SubLex) [@veselovska2013] / CZERT deep learning NLP model [@sido2021] <br><br>
+  
+* How does the usage of linguistic features differ in the coverage of refugees in different media types?
+  + polarity, verb forms and tenses, noun cases ... (UDPIPE word features) 
+  [@straka-2018-udpipe] <br><br>
+  
+* How did the migrational word meanings change over time?
+  + word shift graphs [@gallagher2021]
+  
+# Extra Visualizations
+
+## {data-background-image="graphics/frequencies_terms_alternative.png"}
+
+## {data-background-image="graphics/frequencies_terms_mainstream.png"}
+
+## {data-background-image="graphics/collocs_2015.png"}
+
+## {data-background-image="graphics/collocs_2022.png"}
+
+# Contact us :)
+
+* Irene:
+  + Department of Slavic and Baltic Studies Finnish Dutch and German, Stockholm University
+  + researchgate.net/profile/Irene_Elmerot
+  + irene.elmerot@slav.su.se <br><br>
+
+* Ondrej:
+  + Institute of Sociological Studies, Faculty of the Social Sciences, Charles University
+  + GitHub repository: https://github.com/opop999
+  + ondrej.pekacek@fsv.cuni.cz
+
+# References
+
+
+  
+  
+
+
+
+ 

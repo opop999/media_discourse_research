@@ -1,0 +1,51 @@
+.reveal h1.title {
+  font-size: 1.75em;
+  font-weight: bold;
+  padding-bottom: 1.25em;
+}
+
+.reveal h2.author {
+  font-size: 1.25em;
+  font-weight: bold;
+  padding-bottom: 1em;
+}
+
+.reveal h3.date {
+  font-size: 1em;
+  font-weight: bold;
+}
+
+.reveal h1 {
+  font-size: 1.5em;
+  font-weight: bold;
+}
+
+.reveal h2 {
+  font-size: 1.25em;
+  font-weight: bold;
+}
+
+.reveal h3 {
+  font-size: 1em;
+}
+
+.reveal h4 {
+  font-size: 0.75em;
+}
+
+.reveal p {
+  text-align: left;
+}
+
+.reveal ul {
+  display: block;
+  text-align: left;
+  }
+
+.reveal ol {
+  text-align: left;
+  }
+
+#refs { font-size: 0.55em;
+        text-align: left;
+}

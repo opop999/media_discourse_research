@@ -1,0 +1,55 @@
+---
+title: "Synchronize local with remote Google Drive backup repository"
+---
+
+# Setup
+```{r}
+source("google_drive_sync.R")
+
+# Authenticate using OAuth in the browser
+drive_auth()
+
+# Current user info
+drive_user()
+
+# Open web browser
+drive_browse("media_research/datasets/")
+
+```
+
+
+Example usage
+```{r}
+list_of_folders_to_synchronize <-
+  list(
+    media_articles_full = c(
+      local_folder_path = "../1.data_sources/media_articles/data/full/chunks/",
+      remote_folder_path = "media_research/datasets/1.extracted_data/media/full/chunks/"
+    ),
+    media_articles_annotations = c(
+      local_folder_path = "../1.data_sources/media_articles/data/annotations/chunks/",
+      remote_folder_path = "media_research/datasets/1.extracted_data/media/annotations/chunks/"
+    ),
+    twitter_data = c(
+      local_folder_path = "../1.data_sources/twitter/data/",
+      remote_folder_path = "media_research/datasets/1.extracted_data/twitter/data/"
+    ),
+    media_articles_processed_udpipe = c(
+      local_folder_path = "../2.data_transformations/media_articles/data/udpipe_processed/chunks/",
+      remote_folder_path = "media_research/datasets/2.processed_data/udpipe_processed/chunks/"
+    ),
+    media_articles_processed_regex = c(
+      local_folder_path = "../2.data_transformations/media_articles/data/regex_processed/chunks/",
+      remote_folder_path = "media_research/datasets/2.processed_data/regex_processed/chunks/"
+    ),
+    media_articles_analyzed_ner = c(
+      local_folder_path = "../4.data_analysis/named_entity_recognition/data/chunks/",
+      remote_folder_path = "media_research/datasets/4.analyzed_data/media/ner/chunks/"
+    )
+  )
+
+synchronize_selected_folders(list_of_folders = list_of_folders_to_synchronize)
+
+
+```
+

@@ -1,0 +1,385 @@
+---
+title: "Word frequencies"
+---
+Load necessary packages
+```{r include=FALSE}
+# Package names
+packages <-
+  c(
+    "dplyr",
+    "stringr",
+    "purrr",
+    "tidyr",
+    "tidytext",
+    "quanteda",
+    "jsonlite",
+    "ggplot2",
+    "data.table",
+    "plotly",
+    "forcats",
+    "ggwordcloud",
+    "ggpubr"
+  )
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# Import media labels
+media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+
+```
+
+
+# X Word frequencies using text from Regex processed dataset
+## X.1 Process data
+```{r}
+regex_files_path <- "../2.data_transformations/media_articles/data/regex_processed/chunks/"
+annotated_df_path <- "../1.data_sources/media_articles/data/annotations/chunks/"
+regex_pattern <- "(běženec\\S*)|(běženk\\S*)|(imigrant\\S*)|(migra\\S*)|(imigra\\S*)|(přistěhoval\\S*)|(uprchl\\S*)|(utečen\\S*)|(azylant\\S*)"
+
+# Load stop words
+stop_words_cs <- c(fromJSON("../2.data_transformations/media_articles/data/irene_stopwords.json"),
+                   fromJSON("../2.data_transformations/media_articles/data/stopwords_cs.json")) %>%
+                   unique()
+
+# Get info on doc_id and date of publication
+doc_id_by_date <- list.files(path = annotated_df_path,
+                             pattern = "*.rds",
+                             full.names = TRUE) %>%
+  map_dfr(readRDS) %>%
+  transmute(date = as.Date(datePublished),
+            doc_id = code)
+
+saveRDS(doc_id_by_date, "frequencies/data/doc_id_by_date.rds")
+
+
+# Load regex-processed dataset of full texts
+period_dataset <-
+    list.files(path = regex_files_path,
+               pattern = "*.rds",
+               full.names = TRUE) %>%
+    map_dfr(readRDS) %>% 
+    distinct() %>%
+    mutate(text = map_chr(str_extract_all(text, pattern = regex_pattern), ~ str_c(.x, collapse=" ")))
+    
+# With data.table (more memory efficient)
+period_dataset[, text := str_extract_all(text, pattern = regex_pattern)][, text := map_chr(text, ~ str_c(.x, collapse=" "))]
+period_dataset <- distinct(period_dataset)
+
+saveRDS(period_dataset, "frequencies/data/key_words_per_doc.rds")
+
+# Process corpus to create a DFM
+period_corpus <- corpus(period_dataset,
+         docid_field = "article_id",
+         text_field = "text")
+
+rm(period_dataset)
+gc()
+
+period_corpus_tokenized <- period_corpus %>%
+  tokens(
+    remove_punct = TRUE,
+    remove_numbers = TRUE,
+    remove_symbols = TRUE,
+    remove_url = TRUE
+  ) %>%
+  tokens_tolower() %>%
+  tokens_remove(pattern = stop_words_cs) # Filter out our stopwords
+
+rm(period_corpus)
+gc()
+
+period_dfm <- period_corpus_tokenized %>%
+  dfm() %>%
+  .[, grepl(regex_pattern, colnames(.))] %>% # Filter only columns relevant to the regex string
+  dfm_trim(min_termfreq = 20) %>% # Filter only terms that appear at least x times
+  as.matrix()
+
+rm(period_corpus_tokenized)
+gc()
+
+saveRDS(period_dfm, "frequencies/data/all_media_dfm.rds")
+
+# Which of our searched words were the most common
+most_common_terms <- colSums(period_dfm) %>%
+  sort(decreasing = TRUE) %>%
+  .[nchar(names(.)) > 1]
+
+```
+
+```{r}
+# A workaround to have lemmatized word frequencies, before we use the full
+# UDPIPE data 2015-present
+source("../2.data_transformations/media_articles/udpipe_api_process.R")
+
+lemmatized_migration_terms <-
+  udpipe_process(
+    article_id = as.character(most_common_terms),
+    article_text = names(most_common_terms),
+    log = TRUE
+  ) %>%
+  transmute(token,
+            lemma,
+            upos,
+            total_count = as.integer(doc_id)) %>% 
+ filter(nchar(token) > 1)
+
+saveRDS(lemmatized_migration_terms, "frequencies/data/lemmatized_migration_terms.rds")
+
+```
+
+```{r}
+terms_lemma <- readRDS("frequencies/data/lemmatized_migration_terms.rds")
+doc_id_by_date <- readRDS("frequencies/data/doc_id_by_date.rds")
+filtered_terms <- terms_lemma[terms_lemma$total_count > 100 & terms_lemma$upos %in% c("NOUN", "VERB"), "token"]
+
+# Graph zoom date end & beginning
+start_date <- as.Date("2015-01-01")
+end_date <- as.Date("2022-04-30")
+
+period_frequency_df <- readRDS("frequencies/data/all_media_dfm.rds") %>%
+  as_tibble(rownames = "doc_id") %>%
+  select(doc_id, all_of(filtered_terms)) %>%
+  inner_join(doc_id_by_date, by = "doc_id") %>%
+  mutate(date = as.Date(cut(date, "months"))) %>% 
+  filter(date < as.Date("2022-05-01"))
+
+recoded_factor <- c(
+  "refugee_terms" = "azylant",
+  "refugee_terms" = "azylantov",
+  "refugee_terms" = "běženec",
+  "refugee_terms" = "běženkyně",
+  "migration_terms" = "imigrace",
+  "migration_terms" = "imigrant",
+  "migration_terms" = "imigranta",
+  "migration_terms" = "imigrantek",
+  "migration_terms" = "imigrantka",
+  "migration_terms" = "imigrantom",
+  "migration_terms" = "imigrantov",
+  "migration_terms" = "migrace",
+  "migration_terms" = "migracni",
+  NULL = "migraine",
+  NULL = "migrans",
+  "migration_terms" = "migrant",
+  "migration_terms" = "migranta",
+  NULL = "migranten",
+  NULL = "migrantes",
+  "migration_terms" = "migrantka",
+  "migration_terms" = "migrantoch",
+  "migration_terms" = "migrantom",
+  "migration_terms" = "migrantov",
+  NULL = "migrantów",
+  "migration_terms" = "migrantum",
+  NULL = "migrastatika",
+  NULL = "migrat",
+  NULL = "migrate",
+  NULL = "migrated",
+  NULL = "migrating",
+  NULL = "migration",
+  NULL = "migrator",
+  "migration_terms" = "přistěhovalec",
+  "migration_terms" = "přistěhovalectví",
+  "migration_terms" = "přistěhovalkyně",
+  "migration_terms" = "přistěhovat",
+  "refugee_terms" = "uprchlic",
+  "refugee_terms" = "uprchlice",
+  "refugee_terms" = "uprchlickich",
+  "refugee_terms" = "uprchlictví",
+  "refugee_terms" = "uprchlik",
+  "refugee_terms" = "uprchlík",
+  "refugee_terms" = "uprchlika",
+  "refugee_terms" = "uprchlíka",
+  "refugee_terms" = "uprchlikum",
+  "refugee_terms" = "uprchnout",
+  "refugee_terms" = "utečenca",
+  "refugee_terms" = "utečencoch",
+  "refugee_terms" = "utečencom",
+  "refugee_terms" = "utečencov",
+  "refugee_terms" = "utečenec"
+)
+
+key_dates <- setNames(c(as.Date("2015-05-11"),
+                        as.Date("2015-09-02"),
+                        as.Date("2016-09-21"),
+                        as.Date("2016-11-03"),
+                        as.Date("2018-01-27"),
+                        as.Date("2018-06-10"),
+                        as.Date("2019-01-01"),
+                        as.Date("2020-03-11"),
+                        as.Date("2022-02-24")),
+                      c("EU quota",
+                        "Alan Kurdi",
+                        "Egypt shipwreck",
+                        "Libya shipwreck",
+                        "Milos Zeman re-elected",
+                        "Aquarius rejected",
+                        "Lowest 5yr arrivals",
+                        "Pandemic start",
+                        "Invasion of Ukraine"))
+
+```
+
+```{r}
+frequency_summary_all <- period_frequency_df %>%
+  select(-any_of(colnames(media_labels))) %>%
+  pivot_longer(cols = filtered_terms,
+               names_to = "term",
+               values_to = "count") %>%
+  inner_join(terms_lemma, by = c("term" = "token")) %>%
+  mutate(
+    lemma = fct_recode(lemma, !!!recoded_factor)
+  ) %>%
+  filter(!is.na(lemma)) %>% 
+  group_by(date, lemma) %>%
+  summarize(monthly_count = sum(count))
+
+frequency_summary_mainstream <- period_frequency_df %>%
+  inner_join(media_labels, by = "doc_id") %>% 
+  filter(media_type %in% c("mainstream")) %>% 
+  select(-any_of(colnames(media_labels))) %>%
+  pivot_longer(cols = filtered_terms,
+               names_to = "term",
+               values_to = "count") %>%
+  inner_join(terms_lemma, by = c("term" = "token")) %>%
+   mutate(
+    lemma = fct_recode(
+      lemma, !!!recoded_factor)
+  ) %>%
+  filter(!is.na(lemma)) %>% 
+  group_by(date, lemma) %>%
+  summarize(monthly_count = sum(count))
+
+frequency_summary_alt <- period_frequency_df %>%
+  inner_join(media_labels, by = "doc_id") %>% 
+  filter(media_type %in% c("antisystem", "political_tabloid")) %>% 
+  select(-any_of(colnames(media_labels))) %>%
+  pivot_longer(cols = filtered_terms,
+               names_to = "term",
+               values_to = "count") %>%
+  inner_join(terms_lemma, by = c("term" = "token")) %>%
+    mutate(
+    lemma = fct_recode(
+      lemma, !!!recoded_factor)
+  ) %>%
+  filter(!is.na(lemma)) %>% 
+  group_by(date, lemma) %>%
+  summarize(monthly_count = sum(count))
+```
+
+```{r}
+# Graphs with lemma categories related to migration by media type
+# Mainstream
+ggplot(frequency_summary_mainstream, aes(x = date, y = monthly_count/1000, color = lemma)) +
+  geom_line() +
+  geom_point(size = 0.3) +
+  scale_color_manual(values = c("refugee_terms" = "#2b9bf4", "migration_terms" = "#db1d0b"), labels = c("refugee_terms" = "Refugee terms", "migration_terms" = "Migration terms")) + 
+  geom_vline(xintercept = c(as.numeric(key_dates[1:length(key_dates)])), color = "#563a3a", linetype = 2, size = 0.2) +
+  geom_text(aes(x = key_dates[1], y = 0, label = names(key_dates)[1]), color = "#22209F", vjust = -22, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[2], y = 0, label = names(key_dates)[2]), color = "#22209F", vjust = -40, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[3], y = 0, label = names(key_dates)[3]), color = "#22209F", vjust = -20, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[4], y = 0, label = names(key_dates)[4]), color = "#22209F", vjust = -26, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[5], y = 0, label = names(key_dates)[5]), color = "#22209F", vjust = -21, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[6], y = 0, label = names(key_dates)[6]), color = "#22209F", vjust = -26, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[7], y = 0, label = names(key_dates)[7]), color = "#22209F", vjust = -15, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[8], y = 0, label = names(key_dates)[8]), color = "#22209F", vjust = -12, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[9], y = 0, label = names(key_dates)[9]), color = "#22209F", vjust = -52, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  ylab("Term occurences (in thousand)") +
+  xlab(element_blank()) +
+  labs(title = "How do Czech Mainstream Media Communicate Migration?",
+       subtitle = "Total monthly occurences of migration-related terms, 2015-2022",
+       caption = "Data: Newton Media Archive, Vaclav Cvrcek & Jan Henys (2022)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_text(size = 7),
+        plot.background = element_rect(fill = "grey90"),
+        plot.title = element_text(face = "bold", size = 10),
+        plot.subtitle = element_text(face = "italic", size = 8),
+        plot.caption = element_text(size = 5),
+        axis.title.y = element_text(size = 8),
+        legend.title = element_blank(),
+        legend.key = element_rect(fill = NA, size = 8),
+        legend.text = element_text(size = 9),
+        legend.background = element_rect(fill = NA),
+        legend.position = c(0.8, 0.9),
+        plot.margin = margin(7,30,3,5, "pt")) +
+  scale_x_date(date_breaks = "6 months", date_labels = "%m-%y") +
+  coord_cartesian(xlim = c(start_date, end_date + 120), expand = FALSE) +
+  scale_y_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 100, 5),
+  labels = seq(0, 100, 5),
+  limits = c(0, max(frequency_summary_mainstream$monthly_count/1000) + 10)
+  )
+
+ggsave("../5.write_up/presentation_CCL_march_2022/graphics/frequencies_terms_mainstream.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+
+# Alternative
+ggplot(frequency_summary_alt, aes(x = date, y = monthly_count/1000, color = lemma)) +
+  geom_line() +
+  geom_point(size = 0.3) +
+  scale_color_manual(values = c("refugee_terms" = "#2b9bf4", "migration_terms" = "#db1d0b"), labels = c("refugee_terms" = "Refugee terms", "migration_terms" = "Migration terms")) +
+  geom_vline(xintercept = c(as.numeric(key_dates[1:length(key_dates)])), color = "#563a3a", linetype = 2, size = 0.2) +
+  geom_text(aes(x = key_dates[1], y = 0, label = names(key_dates)[1]), color = "#22209F", vjust = -35, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[2], y = 0, label = names(key_dates)[2]), color = "#22209F", vjust = -45, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[3], y = 0, label = names(key_dates)[3]), color = "#22209F", vjust = -30, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[4], y = 0, label = names(key_dates)[4]), color = "#22209F", vjust = -25, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[5], y = 0, label = names(key_dates)[5]), color = "#22209F", vjust = -35, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[6], y = 0, label = names(key_dates)[6]), color = "#22209F", vjust = -45, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[7], y = 0, label = names(key_dates)[7]), color = "#22209F", vjust = -40, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[8], y = 0, label = names(key_dates)[8]), color = "#22209F", vjust = -30, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[9], y = 0, label = names(key_dates)[9]), color = "#22209F", vjust = -17, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  ylab("Term occurences (in thousand)") +
+  xlab(element_blank()) +
+  labs(title = "How do Czech Alternative Media Communicate Migration?",
+       subtitle = "Total monthly occurences of migration-related terms, 2015-2022",
+       caption = "Data: Newton Media Archive, Vaclav Cvrcek & Jan Henys (2022)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_text(size = 7),
+        plot.background = element_rect(fill = "grey90"),
+        plot.title = element_text(face = "bold", size = 10),
+        plot.subtitle = element_text(face = "italic", size = 8),
+        plot.caption = element_text(size = 5),
+        axis.title.y = element_text(size = 8),
+        legend.title = element_blank(),
+        legend.key = element_rect(fill = NA, size = 8),
+        legend.text = element_text(size = 9),
+        legend.background = element_rect(fill = NA),
+        legend.position = c(0.8, 0.9),
+        plot.margin = margin(7,30,3,5, "pt")) +
+  scale_x_date(date_breaks = "6 months", date_labels = "%m-%y") +
+  coord_cartesian(xlim = c(start_date, end_date + 120), expand = FALSE) +
+  scale_y_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 100, 5),
+  labels = seq(0, 100, 5),
+  limits = c(0, max(frequency_summary_alt$monthly_count/1000) + 10)
+  )
+
+ggsave("../5.write_up/presentation_CCL_march_2022/graphics/frequencies_terms_alternative.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+
+```
+
+```{r}
+# media_count_panel <- media_count_df_by_1_month %>% 
+#   mutate(media_id = as.integer(id)) %>%
+#   inner_join(distinct(all_media_labels_with_doc_id, media_id, .keep_all = TRUE),
+#              by = "media_id") %>%
+#   transmute(month = as.Date(period_start),
+#             media_type,
+#             count) %>% 
+#   filter(media_type %in% c("mainstream", "antisystem", "tabloid", "political_tabloid", "opinion", "market_driven")) %>% 
+#   group_by(month, media_type) %>% 
+#   summarise(count = sum(count)) %>% 
+#   ungroup() %>% 
+#   pdata.frame(index = c("media_type", "month"))
+```
+

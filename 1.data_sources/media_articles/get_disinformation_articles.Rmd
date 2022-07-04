@@ -1,0 +1,139 @@
+
+# Loading necessary R packages to scrape the EUvsDisinfo database
+
+```{r}
+# Package names
+packages <- c("httr", "rvest", "dplyr", "arrow")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+```
+
+# Get the overview of all of the disinformation articles in the EUvsDisinfo dataset
+
+```{r}
+# Read the webpage with the EUvsDisinfo database for migration-tagged, Czech language disinformation
+eu_vs_disinfo_web_database <- read_html("https://euvsdisinfo.eu/disinformation-cases/?disinfo_keywords%5B%5D=keyword_77150&disinfo_language%5B%5D=Czech&per_page=100")
+
+# Extract the table of all of the articles in the database
+table_of_czech_disinfo <- eu_vs_disinfo_web_database %>%
+                          html_elements(css = ".disinfo-db-table") %>% 
+                          html_table() %>% bind_rows()
+
+# Extract links to the reports, from which we will extract the links to the original texts of the disinformation articles
+url_of_article_reports <- eu_vs_disinfo_web_database %>%
+                          html_elements(css = ".disinfo-db-post a") %>%
+                          html_attr("href") %>% paste0("https://euvsdisinfo.eu", .)
+
+# Append links as a separate column
+table_of_czech_disinfo[["urls"]] <- url_of_article_reports
+
+# Save the table for future reference
+saveRDS(table_of_czech_disinfo, "data/czech_migration_disinfo.rds")
+
+
+```
+
+# Extract links to the original text of the disinfo news articles
+
+```{r}
+httr::set_config(httr::user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/96.0.4664.45 Safari/537.36"))
+
+table_of_czech_disinfo <- readRDS("data/czech_migration_disinfo.rds")
+
+url_detail <- table_of_czech_disinfo[["urls"]]
+
+disinfo_articles_url_list <- list()
+
+for (i in seq_along(url_detail)) {
+  
+  # Explicitly open the connection to the url so we can later close it
+  # url <- url(url_detail[i], "rb")
+  
+  # Go to the link with the detailed report and save it to the list
+  disinfo_articles_url_list[[i]] <- read_html(url_detail[i]) %>%
+                                    html_elements(css = ".b-catalog__link a") %>%
+                                    html_attr("href")
+  
+  # Random wait time as not to overwhelm the website
+  Sys.sleep(runif(1, 3, 5))
+  
+  # Close the connection, so we do not have many open ones.
+  # close(url)
+  closeAllConnections()
+  
+  print(paste("Url nr.", i, "of", length(url_detail), "sucessfuly retrieved"))
+}
+
+table_of_czech_disinfo[["disinfo_urls"]] <- disinfo_articles_url_list
+
+saveRDS(table_of_czech_disinfo, "data/czech_migration_disinfo.rds")
+
+```
+
+# Scrape the original disinformation articles using NewsPlease library in Python
+
+```{python}
+from newsplease import NewsPlease
+from newspaper import ArticleException
+import pandas as pd
+```
+
+# Define Python's function
+```{python}
+def get_disinfo_article_texts(disinfo_urls):
+    """[Extract article texts from disinfo url links]
+    Args:
+        disinfo_urls ([list]): [description]
+    Returns:
+        [DataFrame]: [description]
+    """
+    list_of_dictionaries = []
+    for i in range(len(disinfo_urls)):
+        try:
+            article = NewsPlease.from_url(disinfo_urls[i], timeout=15)
+        except ArticleException:
+            print(f"Error, article nr. {i} not downloaded")
+        else:
+            dict_temp = {}
+            dict_temp.update({"title": article.title,
+                              "annotation": article.description,
+                              "full_text": article.maintext,
+                              "extra_text": article.text})
+            list_of_dictionaries.append(dict_temp)
+            print(f"Article {i + 1} out of {len(disinfo_urls)} finished scraping", flush=True)
+    print("Extraction Finished", flush=True)
+    return pd.DataFrame(list_of_dictionaries)
+
+```
+
+# Load and unlist the vector of url strings
+```{r}
+
+czech_migration_disinfo_urls <- unlist(readRDS("data/czech_migration_disinfo.rds")[["disinfo_urls"]])
+
+```
+
+# Run the function on the selected list of links
+```{python}
+disinfo_urls = r.czech_migration_disinfo_urls
+
+
+df = get_disinfo_article_texts(disinfo_urls)
+
+df.to_feather("data/disinfo_articles.feather")
+
+```
+
+
+```{r}
+final_disinfo_dataset <- read_feather("data/disinfo_articles.feather")
+
+```
+

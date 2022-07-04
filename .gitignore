@@ -1,0 +1,55 @@
+#Worksteps
+Worksteps_Git.R
+# History files
+.Rhistory
+.Rapp.history
+# Session Data files
+.RData
+# User-specific files
+.Ruserdata
+# Example code in package build process
+*-Ex.R
+# Output files from R CMD build
+/*.tar.gz
+# Output files from R CMD check
+/*.Rcheck/
+# RStudio files
+.Rproj.user/
+# produced vignettes
+vignettes/*.html
+vignettes/*.pdf
+# OAuth2 token, see https://github.com/hadley/httr/releases/tag/v0.3
+.httr-oauth
+# knitr and R markdown default cache directories
+*_cache/
+/cache/
+# Temporary files created by R markdown
+*.utf8.md
+*.knit.md
+# R Environment Variables
+.Renviron
+google_cloud_credentials.json
+/1.data_sources/media_articles/newton_media_list_of_outlets.rds
+# Extracted Raw Json Files
+/1.data_sources/twitter/data/raw_json_data/*
+# VScode files
+.vscode
+# Raw json data from Twitter
+1.data_sources/twitter/data/raw_json_data/*.
+# Facebook cookies
+docs/fb_cookies_1.json
+# Python env file
+.env
+# Proprietary data and large files that are finished processing
+1.data_sources/media_articles/data/full/chunks/*.rds
+1.data_sources/media_articles/data/full/chunks_cz_sk/*.rds
+1.data_sources/media_articles/data/annotations/chunks/*.rds
+2.data_transformations/media_articles/data/regex_processed/chunks/*.rds
+2.data_transformations/media_articles/data/udpipe_processed/chunks/*.rds
+4.data_analysis/named_entity_recognition/data/chunks/*.rds
+1.data_sources/twitter/data/*.rds
+1.data_sources/twitter/data/*.feather
+
+
+# Large models
+4.data_analysis/word_embeddings/data/models

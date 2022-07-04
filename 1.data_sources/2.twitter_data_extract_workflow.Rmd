@@ -1,0 +1,9 @@
+```{python}
+import twitter/get_tweet_counts_and_save.py
+get_tweet_counts_and_save(token=os.environ.get("TWITTER_TOKEN"),
+                          search_query="(migrace OR imigrace OR uprchlictví OR přistěhovalectví OR emigrace OR migrant OR migrantka OR migrantky OR migranti OR imigrant OR imigrantka OR imigranti OR imigrantky OR uprchlík OR uprchlice OR uprchlíci OR běženec OR běženka OR běženky OR běženci OR přistěhovalec OR přistěhovalkyně OR přistěhovalci OR emigrant OR emigrantka OR emigrantky OR emigranti OR azylant OR azylantka OR azylantky OR azylanti OR utečenec OR utečenka OR utečenci OR utečenky) place_country:CZ",
+                          min_date="2015-01-01T00:00:00Z",
+                          granularity="minute",
+                          save_path="1.data_sources/twitter/data/all_migration_tweets_by_date_filter_country_by_minute.feather")
+
+```

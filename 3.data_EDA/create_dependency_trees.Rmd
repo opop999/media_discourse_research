@@ -1,0 +1,61 @@
+---
+title: "Dependency Trees Visualisation: from UDPIPE dataset"
+output: html_document
+---
+
+```{r include=FALSE}
+# Package names
+packages <- c("udpipe", "dplyr", "jsonlite", "textplot")
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+knitr::knit_engines$set("js" = function(options){
+    out = if (options$eval) {
+        div_pre <- if (!is.null(options$div)) 
+          paste0('<div id="',options$div,'"></div>')
+        code = c(div_pre,
+                '<script type="text/javascript">',
+                 options$code,
+                 '</script>')
+        paste(code, collapse = "\n")
+    }
+    options$results = "asis"
+    knitr::engine_output(options, options$code, out)
+})
+
+```
+
+Load dataset
+```{r}
+# Before converting back to conllu format, the df has to 
+# contain column of "sentence" (which can be empty).
+udpipe_dataset <- readRDS("data/example_udpipe_output.rds") %>% 
+  as_conllu() %>%
+  toJSON()
+
+# Initialize external JS dependencies. Pass the dataset as a JSON object to JS.
+htmltools::tagList(
+  htmltools::tags$script(src = "data/js/jquery-3.6.0.js"),
+  htmltools::tags$script(src = "data/js/js-treex.js"),
+  htmltools::tags$script(src = "data/js/show_trees.js"),
+  htmltools::tags$script(paste0("var conllu_text = ", udpipe_dataset, ".toString();"))
+)
+
+```
+
+Dependency trees using external JS script
+```{js, div = "vis"}
+showTree(conllu_text)
+```
+
+Using R's package textplot
+```{r}
+# Select one doc_id and one sentence from the udpipe dataset
+textplot_dependencyparser(udpipe_df[udpipe_df$doc_id == "2015E004T007" & udpipe_df$sentence_id == 1, ], size = 3) 
+```
+

@@ -1,0 +1,45 @@
+```{python}
+import pandas as pd
+import os
+import pprint
+from facebook_scraper import get_posts
+import json
+```
+
+```{python}
+# Set environment variables
+# os.environ['FB_USER'] = 'user'
+# os.environ['FB_PASSWORD'] = 'pass'
+
+# Get environment variables
+USER = os.getenv('FB_USER')
+PASSWORD = os.getenv('FB_PASSWORD')
+
+listik = []
+
+for post in get_posts(account="hospodarky",
+                      pages=1,
+                      #   credentials=(os.getenv('FB_USER'),
+                      #                os.getenv('FB_PASSWORD')),
+                      cookies="fb_cookies_1.json",
+                      options={"allow_extra_requests": False,
+                               "comments": False}):  # ALTERNATIVE # cookies="fb_cookies.json" or "None"):
+    listik.append(post)
+
+
+# Pretty print when format dictionary
+len(listik)
+pprint.pprint(listik)
+
+# List to dataframe, save to csv file
+
+df = pd.DataFrame(listik)
+
+df.to_csv("test.csv")
+
+array_fb = df.to_numpy()
+array_fb.shape
+
+##################################
+```
+

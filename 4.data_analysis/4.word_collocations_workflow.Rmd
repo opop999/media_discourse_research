@@ -1,0 +1,172 @@
+---
+title: "Word Collocations"
+---
+Load necessary packages
+```{r include=FALSE}
+# Package names
+packages <-
+  c(
+    "dplyr",
+    "stringr",
+    "purrr",
+    "tidyr",
+    "tidytext",
+    "quanteda",
+    "jsonlite",
+    "ggplot2",
+    "data.table",
+    "plotly",
+    "forcats",
+    "ggwordcloud",
+    "ggpubr"
+  )
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# Import media labels
+media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+
+```
+
+
+# X. Collocations
+
+## X.1. Load the summarized data for selected periods
+
+```{r}
+colocs_combined <- bind_rows(readRDS("word_collocations/data/mainstream_2015_collocs.rds") %>% mutate(period_type = "mainstream_2015"),
+                             readRDS("word_collocations/data/alternative_2015_collocs.rds") %>% mutate(period_type = "alternative_2015"),
+                             readRDS("word_collocations/data/mainstream_2022_collocs.rds") %>% mutate(period_type = "mainstream_2022"),
+                             readRDS("word_collocations/data/alternative_2022_collocs.rds") %>% mutate(period_type = "alternative_2022"))
+
+lenght_colloc <- 3L
+```
+
+## X.2. Graphing collocations
+
+```{r}
+collocs_2015_mainstream <- colocs_combined %>% 
+                      filter(period_type == "mainstream_2015" & length == lenght_colloc) %>% 
+                      slice_max(abs(z), n = 10) %>%
+                        ggplot(aes(x = reorder(collocation, abs(z)), y = abs(z))) +
+                          geom_point(color = "#0C2E49", size = 2) +
+                          geom_col(fill = "#2b9bf4", width = 0.2) +
+                          coord_flip() +
+                          ylab(element_blank()) +
+                          xlab(element_blank()) +
+                          labs(title = "Collocations of Migration Content in the Czech news media: October-December 2015",
+                               subtitle = "Mainstream media, top 10 using context window of 5 lemma") +
+                          theme_bw() +
+                          theme(
+                                plot.background = element_rect(fill = "grey90"),
+                                plot.title = element_text(face = "bold", size = 9),
+                                plot.subtitle = element_text(face = "italic", size = 8),
+                                plot.caption = element_text(size = 8),
+                                axis.text = element_text(size = 8, face = "bold", color = "black"),
+                                plot.margin = margin(2, 30, 2, 10, "pt"))
+
+collocs_2015_alt <- colocs_combined %>% 
+                      filter(period_type == "alternative_2015" & length == lenght_colloc) %>% 
+                      slice_max(abs(z), n = 10) %>%
+                        ggplot(aes(x = reorder(collocation, abs(z)), y = abs(z))) +
+                          geom_point(color = "#0C2E49", size = 2) +
+                          geom_col(fill = "#2b9bf4", width = 0.2) +
+                        coord_flip() +
+                        ylab("Wald z-statistic") +
+                        xlab(element_blank()) +
+                        labs(subtitle = "Alternative media, top 10 using context window of 5 lemma",
+                             caption = "Data: Newton Media Archive, Search string: běženec* OR běženk* OR imigrant* OR migra* OR imigra* OR přistěhoval* OR uprchl* OR utečen* OR azylant*") +
+                        theme_bw() +
+                        theme(
+                              plot.background = element_rect(fill = "grey90"),
+                              plot.title = element_text(face = "bold", size = 10),
+                              plot.subtitle = element_text(face = "italic", size = 8),
+                              plot.caption = element_text(size = 4.5),
+                              axis.text = element_text(size = 8, face = "bold", color = "black"),
+                              axis.title.x = element_text(size = 8, color = "black"),
+                              plot.margin = margin(2, 30, 2, 10, "pt"))
+
+```
+
+
+```{r}
+
+ ggarrange(
+   collocs_2015_mainstream,
+   collocs_2015_alt,
+   labels = c("", ""),
+   ncol = 1,
+   nrow = 2)
+ 
+ ggsave("../5.write_up/presentation_CCL_march_2022/graphics/collocs_2015.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+ 
+```
+
+
+```{r}
+collocs_2022_mainstream <- colocs_combined %>% 
+                      filter(period_type == "mainstream_2022" & length == lenght_colloc) %>% 
+                      slice_max(abs(z), n = 10) %>%
+                        ggplot(aes(x = reorder(collocation, abs(z)), y = abs(z))) +
+                          geom_point(color = "#0C2E49", size = 2) +
+                          geom_col(fill = "#2b9bf4", width = 0.2) +
+                          coord_flip() +
+                          ylab(element_blank()) +
+                          xlab(element_blank()) +
+                          labs(title = "Collocations of Migration Content in the Czech news media: February-March 2022",
+                               subtitle = "Mainstream media. top 10 using context window of 5 lemma") +
+                          theme_bw() +
+                          theme(
+                                plot.background = element_rect(fill = "grey90"),
+                                plot.title = element_text(face = "bold", size = 9),
+                                plot.subtitle = element_text(face = "italic", size = 8),
+                                plot.caption = element_text(size = 8),
+                                axis.text = element_text(size = 8, face = "bold", color = "black"),
+                                plot.margin = margin(2, 30, 2, 10, "pt"))
+
+collocs_2022_alt <- colocs_combined %>% 
+                      filter(period_type == "alternative_2022" & length == lenght_colloc) %>% 
+                      slice_max(abs(z), n = 10) %>%
+                        ggplot(aes(x = reorder(collocation, abs(z)), y = abs(z))) +
+                          geom_point(color = "#0C2E49", size = 2) +
+                          geom_col(fill = "#2b9bf4", width = 0.2) +
+                        coord_flip() +
+                        ylab("Wald z-statistic, top 10 using context window of 5 lemma") +
+                        xlab(element_blank()) +
+                        labs(subtitle = "Alternative media",
+                             caption = "Data: Newton Media Archive, Search string: běženec* OR běženk* OR imigrant* OR migra* OR imigra* OR přistěhoval* OR uprchl* OR utečen* OR azylant*") +
+                        theme_bw() +
+                        theme(
+                              plot.background = element_rect(fill = "grey90"),
+                              plot.title = element_text(face = "bold", size = 10),
+                              plot.subtitle = element_text(face = "italic", size = 8),
+                              plot.caption = element_text(size = 4.5),
+                              axis.text = element_text(size = 8, face = "bold", color = "black"),
+                              axis.title.x = element_text(size = 8, color = "black"),
+                              plot.margin = margin(2, 30, 2, 10, "pt"))
+```
+
+# Plotting multiple graphs next to each other
+```{r}
+ ggarrange(
+   collocs_2022_mainstream,
+   collocs_2022_alt,
+   labels = c("", ""),
+   ncol = 1,
+   nrow = 2)
+ 
+ ggsave("../5.write_up/presentation_CCL_march_2022/graphics/collocs_2022.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+ 
+```
+
+
+

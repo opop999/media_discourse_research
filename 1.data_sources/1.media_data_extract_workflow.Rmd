@@ -1,0 +1,689 @@
+0. Load required libraries
+```{r include=FALSE}
+  # Package names
+  packages <- c("dplyr", "stringr", "purrr", "readr", "jsonlite")
+
+  # Install packages not yet installed
+  installed_packages <- packages %in% rownames(installed.packages())
+  if (any(installed_packages == FALSE)) {
+    install.packages(packages[!installed_packages])
+  }
+
+  # Packages loading
+  invisible(lapply(packages, library, character.only = TRUE))
+  
+  # Last update for media labels dataset from Cvrcek et al.
+  last_update <- "february_2022"
+```
+
+1. Extracting Short(annotation only) Versions of Media Articles using the following API parameters. 
+
+```{r}
+# Source the respective function
+source("media_articles/get_all_annotated_articles.R")
+
+date_seq <- seq(as.Date("2015-01-01T00:00:00"), as.Date("2022-05-24T23:59:59"), by = "4 days")
+
+list_of_dfs <- vector(mode = "list", length = length(date_seq) - 1)
+
+start_time <- Sys.time()
+
+for (i in head(seq_along(date_seq), -1)) {
+  cat(
+    "\nLoop nr.", i, "out of", length(date_seq) - 1,
+    "\n>--------------------<\n"
+  )
+
+  list_of_dfs[[i]] <- extract_annotated_articles(
+    search_string = "běženec* OR běženk* OR imigrant* OR migra* OR imigra* OR přistěhoval* OR uprchl* OR utečen* OR azylant*",
+    page_size = 10000,
+    country = 1,
+    min_date = paste0(date_seq[i], "T00:00:00"),
+    max_date = paste0(date_seq[i + 1] - 1, "T23:59:59"),
+    sort = 2,
+    newton_api_token = Sys.getenv("NEWTON_TOKEN"),
+    return_df = TRUE,
+    log = TRUE,
+    log_path = "media_articles/docs/"
+  )
+
+  cat(
+    "\n\nExtraction of the period from", paste0(date_seq[i], "T00:00:00"), "to", paste0(date_seq[i + 1] - 1, "T23:59:59"), "has finished.",
+    "\n>--------------------<\n\n"
+  )
+}
+
+print(Sys.time() - start_time)
+
+# Which, if any, of the dataframes in the list are empty?
+missing_vector_index <- which(unlist(lapply(list_of_dfs, nrow)) == 0)
+
+annotated_df <- bind_rows(list_of_dfs) %>% distinct(code, .keep_all = TRUE)
+
+# Split annotated df by years for easier sharing
+annotated_split <- split(annotated_df, as.factor(format(as.Date(annotated_df$datePublished), "%Y")))
+
+# Write the dataset to chunks
+lapply(names(annotated_split), function(df) {
+  saveRDS(distinct(annotated_split[[df]]), file = paste0("media_articles/data/annotations/chunks/annotated_articles_", df, ".rds"))
+})
+
+# Read the chunks back in
+annotated_df <- list.files(path = "media_articles/data/annotations/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS)
+
+```
+
+Integrity tests
+```{r}
+# Integrity tests
+# Which days, if any, are missing/have 0 results?
+as.Date(setdiff(as.character(seq(as.Date("2015-01-01T00:00:00"),
+                                 as.Date("2022-05-24T23:59:59"), by = "1 day")),
+                as.character(as.Date(unique(annotated_df$datePublished)))))
+
+## Check if min articles per day is more than cca 45
+annotated_df %>% 
+  mutate(datePublished = as.Date(datePublished)) %>% 
+  count(datePublished) %>% 
+  filter(n < 50)
+
+# Find duplicated news items, if any
+duplicated_code_ids <- annotated_df[duplicated(annotated_df$code),] %>% pull(code)
+duplicated_rows <- annotated_df[annotated_df$code %in% duplicated_code_ids,]
+
+```
+
+Extract all of the media news outlets in the annotated dataset
+```{r}
+unique_media_and_types <- annotated_df[,c("sourceName", "mediaType.id")] %>% distinct()
+
+saveRDS(unique_media_and_types, "media_articles/data/unique_media_types.rds")
+```
+
+2. Extracting "History Ids" from Newton database
+
+```{r}
+source("media_articles/get_media_id.R")
+
+# Reads dataset of distinct media outlet names and types from previous step
+unique_media_and_types <- readRDS("media_articles/data/unique_media_types.rds")
+# Specify path to existing cleaned dataset of media names & ids to avoid repetition
+media_names_and_ids_clean_path <- "media_articles/data/history_id_df_clean.rds"
+# Specify path to existing raw list of queried media names and ids
+history_id_df_raw_list_path <- "media_articles/data/history_id_list.rds"
+
+# Checks for the presence of existing clean dataset
+if (file.exists(media_names_and_ids_clean_path)) {
+  unique_media_and_types <- unique_media_and_types %>%
+    filter(!sourceName %in% readRDS(media_names_and_ids_clean_path)[["searched_name"]])
+}
+
+# Run fuction that queries the Newton database by media name and saves the information
+# regarding the media outlet id + so-called history id
+history_id_df_raw_list <- get_history_id(
+  media_name_vec = unique_media_and_types$sourceName,
+  media_types_vec = unique_media_and_types$mediaType.id,
+  page_size = 3,
+  newton_api_token = Sys.getenv("NEWTON_TOKEN"),
+  log = TRUE,
+  log_path = "media_articles/docs/"
+)
+
+# Checks for the presence of existing raw list to prevent overwriting
+if (file.exists(history_id_df_raw_list_path)) {
+  saveRDS(c(readRDS(history_id_df_raw_list_path), history_id_df_raw_list), "media_articles/data/history_id_list.rds")
+} else {
+  saveRDS(history_id_df_raw_list, "media_articles/data/history_id_list.rds")
+}
+
+# Which media names are present in our dataset, but we were unable to find numeric id for?
+media_names_and_ids_clean <- bind_rows(history_id_df_raw_list) %>%
+  filter(name == searched_name) %>%
+  select(searched_name, id, sourceHistoryId) %>%
+  bind_rows(tibble(searched_name = unique_media_and_types[lapply(history_id_df_raw_list, length) == 0, ][["sourceName"]], sourceHistoryId = NA)) %>%
+  mutate(
+    id = as.character(id),
+    sourceHistoryId = as.character(sourceHistoryId)
+  )
+
+# Checks for the presence of existing clean dataset to prevent overwriting
+if (file.exists(media_names_and_ids_clean_path)) {
+  readRDS(media_names_and_ids_clean_path) %>%
+    bind_rows(media_names_and_ids_clean) %>%
+    distinct() %>%
+    filter(!is.na(sourceHistoryId)) %>% 
+  saveRDS("media_articles/data/history_id_df_clean.rds")
+} else {
+  saveRDS(media_names_and_ids_clean, "media_articles/data/history_id_df_clean.rds")
+}
+
+```
+
+3. Extracting counts of total published content in the selected time frame of all the media from Newton database
+
+```{r}
+# Source function which gets of all of the published articles within a selected period for a selected media
+source("media_articles/get_media_count.R")
+# Load cleaned dataset of "history ids" with media names
+history_id_df_clean <- readRDS("media_articles/data/history_id_df_clean.rds")
+
+# Separate the whole time frame into periods of 3 months
+date_seq_period <- seq(as.Date("2015-01-01"), as.Date("2022-05-01"), by = "1 months")
+
+# Script loops over each period
+for (i in head(seq_along(date_seq_period), -1)) {
+  cat(
+    "\nLoop nr.", i, "out of", length(date_seq_period) - 1,
+    "\n>--------------------<\n"
+  )
+
+  list_of_counts_period <- get_count_per_media(
+    min_date = paste0(date_seq_period[i], "T00:00:00"),
+    max_date = paste0(date_seq_period[i + 1] - 1, "T23:59:59"),
+    media_history_id_vector = history_id_df_clean$sourceHistoryId[!is.na(history_id_df_clean$sourceHistoryId)],
+    media_id = history_id_df_clean$id[!is.na(history_id_df_clean$sourceHistoryId)],
+    media_name = history_id_df_clean$searched_name[!is.na(history_id_df_clean$sourceHistoryId)],
+    newton_api_token = Sys.getenv("NEWTON_TOKEN"),
+    log = TRUE,
+    log_path = "media_articles/docs/"
+  )
+
+  cat(
+    "\n\nExtraction of the period from",
+    paste0(date_seq_period[i], "T00:00:00"),
+    "to",
+    paste0(date_seq_period[i + 1] - 1, "T23:59:59"),
+    "has finished.",
+    "\n>--------------------<\n\n"
+  )
+
+  # Save dataset chunks
+  saveRDS(
+    object = bind_rows(list_of_counts_period),
+    file = paste0("media_articles/data/counts/chunks/all_counts_", date_seq_period[i], "_to_", date_seq_period[i + 1] - 1, ".rds")
+  )
+
+  # Trigger memory garbage collection
+  gc()
+  
+  # Pause between loops
+  Sys.sleep(runif(1, 600, 1800))
+  
+}
+
+# Read the chunks as one dataset and save them to one file
+media_count_df_by_period <- list.files(path = "media_articles/data/counts/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS)
+
+saveRDS(media_count_df_by_period, "media_articles/data/counts/media_count_df_by_period.rds")
+ 
+```
+
+4. Extracting full media articles
+
+```{r}
+# Source the respective function
+source("media_articles/get_full_articles.R")
+
+date_seq <- seq(as.Date("2015-01-01"), as.Date("2022-05-25"), by = "3 days")
+
+# Start time measuring
+start_time <- Sys.time()
+
+for (i in head(seq_along(date_seq), -1)) {
+
+cat("\nLoop nr.", i, "out of", length(date_seq) - 1, "for total time frame of", as.character(head(date_seq, 1)), "to", as.character(tail(date_seq, 1)), # add correct date reference
+    "\n>>>>------------<<<<\n")
+  
+full_articles_df <- extract_full_articles(search_string = "běženec* OR běženk* OR imigrant* OR migra* OR imigra* OR přistěhoval* OR uprchl* OR utečen* OR azylant*",
+                         min_date = as.character(date_seq[i]),
+                         max_date = as.character(date_seq[i + 1]),
+                         newton_api_token = Sys.getenv("NEWTON_TOKEN"),
+                         log = TRUE,
+                         return_df = TRUE,
+                         log_path = "media_articles/docs/") %>% 
+  mutate(Author = unlist(Author))
+
+  # Save dataset chunks
+  saveRDS(
+    object = distinct(full_articles_df),
+    file = paste0("media_articles/data/full/chunks_cz_sk/full_articles_cz_sk_", date_seq[i], "_to_", date_seq[i + 1] - 1, ".rds")
+  )
+
+  # Trigger memory garbage collection
+  gc()
+
+  Sys.sleep(runif(1, 10, 60))
+    
+}
+
+cat("The extraction for selected date sequences took:", difftime(Sys.time(), start_time, units = "mins"), "minutes")
+
+```
+
+Integrity checks: comparing full and annotated datasets
+
+```{r}
+# Read the full dataset of chunks back in
+full_articles_df_cz_sk <- list.files(path = "media_articles/data/full/chunks_cz_sk/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS) %>% 
+  mutate(PublishDate = as.Date(PublishDate)) %>% 
+  filter(PublishDate >= as.Date("2022-02-01")) # We can filter by specific date, if we are adding new data
+
+# Read the annotated dataset of chunks back in
+annotated_df <- list.files(path = "media_articles/data/annotations/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS) %>% 
+  mutate(datePublished = as.Date(datePublished)) %>% 
+  filter(datePublished >= as.Date("2022-02-01"))
+
+# Read in the dataset with media id information
+media_names_and_ids_clean <- readRDS("media_articles/data/history_id_df_clean.rds")
+
+# Which Czech media articles are contained in the annotated dataset but are missing from the full dataset?
+annotations_of_missing_full_articles <- annotated_df[annotated_df$code %in% setdiff(annotated_df$code, full_articles_df_cz_sk$Code),] %>%
+  left_join(media_names_and_ids_clean, by = c("sourceName" = "searched_name")) # add media id data for next step
+
+# Save the annotations of those missing articles
+saveRDS(annotations_of_missing_full_articles, "media_articles/data/annotations/annotations_of_missing_full_articles.rds")
+
+```
+
+5. Retrieving missing full articles one by one
+
+```{r}
+# Load dataset with annotations of missing articles
+annotations_of_missing_full_articles <- readRDS("media_articles/data/annotations/annotations_of_missing_full_articles.rds")
+
+# Read in the dataset with media id information
+media_names_and_ids_clean <- readRDS("media_articles/data/history_id_df_clean.rds")
+```
+
+With search string and "old API"
+```{r}
+source("media_articles/get_full_articles_individual.R")
+
+# Create empty list to which we will append with every API call
+additional_full_articles_list_old_api <- vector(mode = "list", length = nrow(annotations_of_missing_full_articles))
+
+# Loop over the dataset with annotations of missing full articles
+for (i in seq_len(nrow(annotations_of_missing_full_articles))) {
+  additional_full_articles_list_old_api[[i]] <- extract_full_articles_individual(
+    search_string = word(gsub("\\s+", " ", gsub("<(.|\n)*?>|[^ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮĚÓa-zA-Z0-9,_ ]", " ", annotations_of_missing_full_articles$annotation[[i]])), end = 15),
+    min_date = as.character(as.Date(annotations_of_missing_full_articles$datePublished[[i]])),
+    max_date = as.character(as.Date(annotations_of_missing_full_articles$datePublished[[i]]) + 1),
+    media_id = annotations_of_missing_full_articles$id[[i]],
+    newton_api_token = Sys.getenv("NEWTON_TOKEN"),
+    log = TRUE,
+    log_path = "media_articles/docs/"
+  )
+
+  additional_full_articles_list_old_api[[i]][["searched_term"]] <- gsub("<(.|\n)*?>", "", annotations_of_missing_full_articles$title[[i]])
+
+  Sys.sleep(runif(1, 0.1, 0.2))
+
+  cat("\nArticle", i, "out of", nrow(annotations_of_missing_full_articles), "extracted.")
+}
+
+# Convert list to dataframe
+additional_full_articles_df <- bind_rows(list_of_full_articles_dfs) %>% distinct(Code, .keep_all = TRUE)
+
+saveRDS(additional_full_articles_df, "media_articles/data/full/additional_full_articles_df.rds")
+
+```
+
+With the "new" API
+```{r}
+source("media_articles/get_full_articles_individual_new_api.R")
+
+# Create empty list to which we will append with every API call
+additional_full_articles_list_new_api <- vector(mode = "list", length = nrow(annotations_of_missing_full_articles))
+
+# Loop over the dataset with annotations of missing full articles
+for (i in seq_len(nrow(annotations_of_missing_full_articles))) {
+  additional_full_articles_list_new_api[[i]] <- extract_full_articles_individual_new_api(
+    article_code = annotations_of_missing_full_articles$code[[i]],
+    date_published = annotations_of_missing_full_articles$datePublished[[i]],
+    search_history_id = annotations_of_missing_full_articles$searchHistoryId[[i]],
+    newton_api_token = Sys.getenv("NEWTON_TOKEN"),
+    log_path = "media_articles/docs/"
+  )
+  Sys.sleep(runif(1, 0.1, 0.2))
+
+  cat("\nArticle", i, "out of", nrow(annotations_of_missing_full_articles), "extracted.")
+}
+
+# Bind the list to one dataframe, rename the list columns to be compatible with the full articles
+additional_full_articles_df <- bind_rows(additional_full_articles_list_new_api) %>%
+  left_join(media_names_and_ids_clean, by = c("sourceName" = "searched_name")) %>%
+  distinct(code, .keep_all = TRUE) %>%
+  transmute(
+    "Content" = content,
+    "Page" = page,
+    "SectionName" = sectionName,
+    "Score" = NA,
+    "Id" = id,
+    "SourceId" = NA,
+    "SourceName" = sourceName,
+    "Code" = code,
+    "Author" = author,
+    "PublishDate" = datePublished,
+    "ImportDate" = importDate,
+    "Url" = detailUrl,
+    "Title" = title
+  )
+
+saveRDS(additional_full_articles_df, "media_articles/data/full/chunks_cz_sk/additional_full_articles_df.rds")
+
+```
+
+Add to the full dataset
+```{r}
+# Read the full dataset back in
+full_articles_df_cz_sk <- list.files(path = "media_articles/data/full/chunks_cz_sk/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS) %>% 
+  mutate(PublishDate = as.Date(PublishDate)) %>% 
+  filter(PublishDate >= as.Date("2022-02-01")) 
+
+# Read the additional articles dataset back in
+additional_full_articles_df <- readRDS("media_articles/data/full/additional_full_articles_df.rds")
+
+# Add the newly extracted dataset to the 
+full_articles_df_cz_sk <- bind_rows(full_articles_df_cz_sk, additional_full_articles_df) %>% distinct(Code, .keep_all = TRUE)
+```
+
+Split complete dataset to CZ and SK 
+```{r}
+full_articles_cz <- full_articles_df_cz_sk[full_articles_df_cz_sk$Code %in% annotated_df$code, ]
+# full_articles_sk <- full_articles_df_cz_sk[!full_articles_df_cz_sk$Code %in% annotated_df$code,]
+
+saveRDS(full_articles_cz, "media_articles/data/full_articles_cz.rds", compress = FALSE)
+# saveRDS(full_articles_sk, "media_articles/data/full_articles_sk.rds", compress = FALSE)
+```
+
+Create chunks of the complete dataset
+```{r}
+full_articles_cz <- readRDS("media_articles/data/full_articles_cz.rds")
+
+full_articles_split <- split(full_articles_cz, as.factor(format(as.Date(full_articles_cz$PublishDate), "%Y-%m")))
+
+lapply(names(full_articles_split), function(df) {
+  saveRDS(distinct(full_articles_split[[df]]), file = paste0("media_articles/data/full/chunks/full_articles_", df, ".rds"))
+})
+```
+
+Test full dataset
+```{r}
+# Read the full dataset of chunks back in
+full_articles_cz <- list.files(path = "media_articles/data/full/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS)
+```
+
+Export informative counts about the total number of migration-related articles per media
+```{r}
+full_articles_cz %>% transmute(media_name = SourceName) %>% count(media_name, sort = TRUE) %>% saveRDS("media_articles/data/newton_migration_articles_by_media.rds")
+```
+
+6. Get Newton Media's own media type labels: Using website version and JS script
+
+```{js}
+// e.g. console.save({hello: 'world'})
+(function (console) {
+    console.save = function (data, filename) {
+        if (!data) {
+            console.error('Console.save: No data')
+            return;
+        }
+        if (!filename) filename = 'console.json'
+        if (typeof data === "object") {
+            data = JSON.stringify(data, undefined, 4)
+        }
+        var blob = new Blob([data], { type: 'text/json' }),
+            a = document.createElement('a')
+        var e = new MouseEvent('click', {
+            view: window,
+            bubbles: true,
+            cancelable: false
+        });
+
+        a.download = filename
+        a.href = window.URL.createObjectURL(blob)
+        a.dataset.downloadurl = ['text/json', a.download, a.href].join(':')
+        a.dispatchEvent(e)
+    }
+})(console);
+
+// Immediately executed function that gets all of the nested media type. Caution, page must be fully loaded for this.
+(function media_types_scrape() {
+
+    var media_types_dict = {};
+
+    // Get all unique depth levels for media types
+    var depth_levels = [...new Set(([...document.querySelectorAll(".item-holder-source")].map((c) => c.getAttribute("data-type"))))];
+
+    for (var level in depth_levels) {
+
+        if (level == 3) {
+            media_types_dict["level_" + level] = {
+                data_id: ([...document.querySelectorAll(`.item-holder-source[data-type="${level}"]`)].map((c) => c.getAttribute("data-id"))),
+                data_name: ([...document.querySelectorAll(`.item-holder-source[data-type="${level}"]`)].map((c) => c.getAttribute("data-name"))),
+                parent_data_id: ([...document.querySelectorAll(`.item-holder-source[data-type="${level}"]`)].map((c) => c.parentElement.parentElement.parentElement.parentElement.parentElement.firstChild.querySelector("div > span.k-in > div").getAttribute("data-id")))
+            };
+        } else if (level !== 3) {
+
+            media_types_dict["level_" + level] = {
+                data_id: ([...document.querySelectorAll(`.item-holder-source[data-type="${level}"]`)].map((c) => c.getAttribute("data-id"))),
+                data_name: ([...document.querySelectorAll(`.item-holder-source[data-type="${level}"]`)].map((c) => c.getAttribute("data-name")))
+            };
+        }
+    }
+
+    // Copy to clipboard
+    // copy(media_types_dict);
+    return (console.save(media_types_dict, "newton_media_types.json"));
+
+})();
+
+
+```
+
+```{r}
+newton_media_types <-  fromJSON("media_articles/data/media_type_labels/newton_media_types.json") %>%
+  lapply(function(x)
+    distinct(bind_rows(x)))
+
+combined_newton_media_types <- newton_media_types$level_3 %>% 
+  inner_join(
+    newton_media_types$level_2,
+    by = c("parent_data_id" = "data_id")
+  ) %>% transmute(media_id = as.integer(data_id),
+                  media = data_name.x,
+                  media_type_newton = data_name.y)
+
+
+saveRDS(combined_newton_media_types, "media_articles/data/media_type_labels/combined_newton_media_types.rds")
+
+```
+
+
+
+
+
+7. Match our cleaned media names with media labels from Vaclav Cvrcek et al. (Work in Progress)
+
+Step 1: Clean the dataset from Cvrcek et al., keeping only fully matching labels between coders
+```{r}
+# There are two human coders who assign labels to the media
+process_media_labels_dataset <- function(rds_path) {
+processed_df <-
+  readRDS(rds_path) %>%
+  transmute("name" = "web", "name_alt" = "title", "media_type", "media_type_monitora" = "Monitora kategorie") %>% 
+  set_names(c("name", "name_alt", "media_type", "media_type_monitora")) %>%
+  filter(!is.na(media_type) & !is.na(name)) %>%
+  mutate(name_alt = if_else(is.na(name_alt), name, name_alt),
+         media_type = recode_factor(as.factor(media_type),
+                                    "Analyticko-investigativní" = "investigative",
+                                    "Antisystémové weby" = "antisystem",
+                                    "Blbost - vyhodit" = "irrelevant",
+                                    "Bulvární media" = "tabloid",
+                                    "Hlavní proud" = "mainstream",
+                                    "Market-driven media" = "market_driven",
+                                    "Názorové deníky" = "opinion",
+                                    "Ostatní" = "other",
+                                    "Politický bulvár" = "political_tabloid",
+                                    "Stranické weby" = "party_web",
+                                    "Web instituce" = "institution_web"),
+         media_type_monitora = recode_factor(as.factor(media_type_monitora),
+                                    "Ekonomika / Finance / Právo" = "econ_fin_law",
+                                    "Potenciálně dezinformační weby" = "disinfo",
+                                    "Regionální zprávy" = "regional",
+                                    "Společenské / Bulvár" = "society_tabloid",
+                                    "Zprávy / Politika" = "news_politics"))
+return(processed_df)
+}
+
+# Process media label dataset from both coders
+labels_df_1 <- process_media_labels_dataset(paste0("media_articles/data/media_type_labels/labels_vc_", last_update, ".csv"))
+labels_df_2 <- process_media_labels_dataset(paste0("media_articles/data/media_type_labels/labels_jh_", last_update, ".csv"))
+
+coders_matched_media <-
+  inner_join(labels_df_1,
+             labels_df_2,
+             by = "name",
+             suffix = c("_df_1", "_df_2")) %>%
+  filter(media_type_df_1 == media_type_df_2) %>%
+  transmute(
+    name,
+    name_alt = name_alt_df_1,
+    media_type = media_type_df_1,
+    media_type_monitora = media_type_monitora_df_1
+  )
+
+saveRDS(coders_matched_media, paste0("media_articles/data/media_type_labels/coders_matched_labels_", last_update, ".rds"))
+
+```
+
+Step 2: Add our custom labels for "offline" outlets and other important ones which are not present in the Vaclav Cvrcek et al. dataset
+```{r}
+# We can always format the spaces of the tribble by piping it to %>% datapasta::dpasta()
+# Helps to inform which important media appear in our migration dataset and are not
+# already matched in the Cvrcek et al. dataset
+newton_migration_articles_by_media <-
+  readRDS("media_articles/data/newton_migration_articles_by_media.rds") %>%
+  filter(!media_name %in% coders_matched_media$name,
+         !grepl(media_name, pattern = "\\.cz") # Filter for "offline"
+         ) 
+
+# Work in progress: Most offline above 1000 articles labelled
+custom_media_labels <- tibble::tribble(
+                                 ~name,     ~media_type, ~media_type_monitora,
+                   "Mladá fronta DNES",    "mainstream",      "news_politics",
+                            "blesk.cz",       "tabloid",    "society_tabloid",
+                               "ČT 24",    "mainstream",      "news_politics",
+                               "Právo",    "mainstream",      "news_politics",
+                       "Lidové noviny",    "mainstream",      "news_politics",
+                             "TV Nova",    "mainstream",      "news_politics",
+                            "ČRo Plus",    "mainstream",      "news_politics",
+                     "ČRo Radiožurnál",    "mainstream",      "news_politics",
+                         "Haló noviny",     "party_web",      "news_politics",
+                                "ČT 1",    "mainstream",      "news_politics",
+                  "Hospodářské noviny",    "mainstream",      "news_politics",
+                               "Prima",    "mainstream",      "news_politics",
+                      "CNN Prima News",    "mainstream",      "news_politics",
+                            "Polar TV",    "mainstream",      "news_politics",
+                                 "E15",    "mainstream",       "econ_fin_law",
+                             "Respekt",       "opinion",      "news_politics",
+                               "Blesk",       "tabloid",    "society_tabloid",
+                               "Metro",    "mainstream",           "regional",
+                              "Reflex",       "opinion",      "news_politics",
+                               "Týden",       "tabloid",    "society_tabloid",
+                             "Deník N", "investigative",      "news_politics",
+  "Frýdecko-místecký a třinecký deník",    "mainstream",           "regional",
+                    "Pardubický deník",    "mainstream",           "regional",
+                       "Písecký deník",    "mainstream",           "regional",
+                     "Vyškovský deník",    "mainstream",           "regional",
+                  "Prostějovský deník",    "mainstream",           "regional",
+                    "Benešovský deník",    "mainstream",           "regional",
+                   "Českolipský deník",    "mainstream",           "regional",
+                     "Jihlavský deník",    "mainstream",           "regional",
+                    "Domažlický deník",    "mainstream",           "regional",
+                              "Impuls",    "mainstream",      "news_politics",
+                         "Frekvence 1",    "mainstream",      "news_politics",
+                           "Rádio ZET",    "mainstream",      "news_politics",
+                           "ČRo Sever",    "mainstream",      "news_politics",
+                                "Aha!",       "tabloid",    "society_tabloid",
+                                  "A2",       "opinion",      "news_politics",
+                        "TV Barrandov",       "tabloid",    "society_tabloid"
+  )
+
+saveRDS(custom_media_labels, "media_articles/data/media_type_labels/custom_media_labels.rds")
+
+```
+
+Step 3: Join all Newton media names with Cvrcek et al. media labels + our custom "offline" media labels
+
+```{r}
+# Load previously created datasets
+history_id_df_clean <- readRDS("media_articles/data/history_id_df_clean.rds")
+coders_matched_media <- readRDS(paste0("media_articles/data/media_type_labels/coders_matched_labels_", last_update, ".rds"))
+custom_media_labels <- readRDS("media_articles/data/media_type_labels/custom_media_labels.rds")
+combined_newton_media_types <- readRDS("media_articles/data/media_type_labels/combined_newton_media_types.rds")
+
+
+# Create one dataset which unites all three
+joined_labels_df <- history_id_df_clean %>%
+  left_join(
+    bind_rows(custom_media_labels, coders_matched_media),
+    by = c("searched_name" = "name")
+  ) %>%
+  filter(!is.na(media_type)) %>%
+  transmute(
+    name = searched_name,
+    media_id = as.integer(id),
+    history_id = as.integer(sourceHistoryId),
+    media_type,
+    media_type_monitora
+  ) 
+
+# Alternative workflow with fuzzy matching (might achieve somewhat better results)
+# 
+# library(fuzzyjoin)
+# fuzzy_merged_df <- stringdist_join(
+#   x = history_id_df_clean, 
+#   y = bind_rows(custom_media_labels, coders_matched_media), 
+#   by = c("searched_name" = "name"),
+#   max_dist = 1, 
+#   method = "lv", 
+#   mode = "inner", 
+#   ignore_case = TRUE,
+#   distance_col = "edit_distance",
+#   weight = c(d = 1, i = 0.2, s = 1, t = 1) # Here we can adjust penalties (min 0, max 1) for different types of edits.
+#   # "d" is deletion, "i" insertion, "s" substitution, "t" transposition (only for certain distances). I lowered penalty for insertion, but play around with this to get best results.
+# ) %>%
+#   select(-name_alt)
+
+# Get all article ids for each of the media that we have labels available
+# First load existing full articles dataset
+full_articles_cz <- list.files(path = "media_articles/data/full/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS) %>%
+  transmute(doc_id = Code, media_id = as.integer(SourceId), media_name = SourceName)
+
+# Join our media labels dataset with the dataset of all document ids, joining by media_id key
+all_media_labels_with_doc_id  <- inner_join(joined_labels_df, full_articles_cz, by = "media_id")
+
+# Alternative, preserving the unlabelled media and adding new labels from Newton
+vc_and_newton_media_labels  <- left_join(full_articles_cz, joined_labels_df, by = "media_id") %>% 
+  left_join(combined_newton_media_types, by = "media_id") %>% 
+  select(-name, media)
+
+
+
+saveRDS(all_media_labels_with_doc_id, "media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds") 
+saveRDS(vc_and_newton_media_labels, "media_articles/data/media_type_labels/vc_and_newton_media_labels.rds" )
+
+
+```
+
+
+
+

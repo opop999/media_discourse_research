@@ -1,0 +1,10 @@
+```{zsh, engine.opts='-l'}
+source ~/.zshrc
+conda activate $CONDA_ENV
+# Downloads all data from specified directory
+kaggle kernels output $KAGGLE_REPO
+
+```
+
+
+

@@ -1,0 +1,80 @@
+---
+title: "Keyword Extraction"
+---
+Load necessary packages
+```{r include=FALSE}
+# Package names
+packages <-
+  c(
+    "dplyr",
+    "stringr",
+    "purrr",
+    "tidyr",
+    "tidytext",
+    "quanteda",
+    "jsonlite",
+    "ggplot2",
+    "data.table",
+    "plotly",
+    "forcats",
+    "ggwordcloud",
+    "ggpubr"
+  )
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# Import media labels
+media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+
+```
+
+# KeyWord extraction using TF-IDF on local corpus (WORK IN PROGRESS)
+## Read data of interest
+```{r}
+
+clean_articles_2015 <- list.files(path = "../2.data_transformations/media_articles/data/udpipe_processed/chunks/",
+                                  pattern = "*.rds",
+                                  full.names = TRUE) %>%
+  .[grepl("2015-(10|11|12)", .)] %>% # "(2015-(10|11|12))|(2022-(02|03|04))"
+  map_dfr(readRDS)
+
+clean_articles_2022 <- list.files(path = "../2.data_transformations/media_articles/data/udpipe_processed/chunks/",
+                                  pattern = "*.rds",
+                                  full.names = TRUE) %>%
+  .[grepl("2022-(02|03|04)", .)] %>% 
+  map_dfr(readRDS)
+
+# Import media labels
+media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+
+```
+
+# Calculate words with highest TF-IDF.
+Note: if the goal is to get article-wise KW, it will be better to do it with the entire corpus,
+not just with the selected period.
+```{r}
+corpus_words_2015 <- clean_articles_2015 %>%
+  filter(upos %in% c("VERB", "NOUN", "ADJ", "PROPN")) %>%
+  mutate(word = tolower(str_replace_na(lemma, replacement = ""))) %>% 
+  count(doc_id, word, sort = TRUE)
+  
+total_words_2015 <- corpus_words_2015 %>%
+  group_by(doc_id) %>%
+  summarize(total = sum(n))
+
+corpus_tf_idf_2015 <- left_join(corpus_words_2015, total_words_2015, by = "doc_id") %>%
+  bind_tf_idf(word, doc_id, n) %>%
+  slice_max(tf_idf, n = 100) %>%
+  arrange(desc(tf_idf))
+
+```
+
+
+

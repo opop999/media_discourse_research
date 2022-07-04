@@ -1,0 +1,75 @@
+---
+title: "Exploratory data analysis: Average Text Lenght"
+---
+
+```{r include=FALSE}
+# Package names
+packages <- c("dplyr", "stringr", "purrr")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+```
+
+# Average article length per media outlet
+```{r}
+all_articles_lengths <-
+  list.files(path = "../2.data_transformations/media_articles/data/regex_processed/chunks/",
+             pattern = "*.rds",
+             full.names = TRUE) %>%
+  map_dfr(~ transmute(readRDS(.), article_id, len = str_count(text, "\\w+"))) %>% 
+  distinct()
+
+media_names <-
+  list.files(path = "../1.data_sources/media_articles/data/full/chunks/",
+             pattern = "*.rds",
+             full.names = TRUE) %>% 
+  map_dfr(~ transmute(readRDS(.), article_id = Code, media_name = SourceName))  
+
+mean_article_lenght_per_media <- all_articles_lengths %>%
+  inner_join(media_names, by = "article_id") %>%
+  group_by(media_name) %>%
+  summarize(avg_article_len = mean(len))
+
+saveRDS(mean_article_lenght_per_media, "data/lengths/mean_article_lenght_per_media.rds")
+
+```
+
+# Average article length per media type
+```{r}
+mean_article_lenght_per_media <- readRDS("data/lengths/mean_article_lenght_per_media.rds")
+
+vc_and_newton_media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/vc_and_newton_media_labels.rds")
+
+lenght_by_type_vc <- vc_and_newton_media_labels %>%
+  select(media_name, media_type) %>% 
+  na.omit() %>%
+  distinct() %>% 
+  inner_join(mean_article_lenght_per_media, by = "media_name") %>% 
+  group_by(media_type) %>% 
+  summarize(avg_len_by_type = mean(avg_article_len))
+
+lenght_by_type_newton <- vc_and_newton_media_labels %>%
+  select(media_name, media_type_newton) %>% 
+  na.omit() %>%
+  distinct() %>% 
+  inner_join(mean_article_lenght_per_media, by = "media_name") %>% 
+  group_by(media_type_newton) %>% 
+  summarize(avg_len_by_type = mean(avg_article_len))
+
+lenght_by_type_monitora <- vc_and_newton_media_labels %>%
+  select(media_name, media_type_monitora) %>% 
+  na.omit() %>%
+  distinct() %>% 
+  inner_join(mean_article_lenght_per_media, by = "media_name") %>% 
+  group_by(media_type_monitora) %>% 
+  summarize(avg_len_by_type = mean(avg_article_len))
+
+```
+

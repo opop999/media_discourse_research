@@ -1,0 +1,28 @@
+
+```{r}
+# load the instagram IDs through R
+
+instagram_acc_ids <- readRDS("instagram_acc_ids.rds")[9:10]
+
+```
+
+
+```{python}
+from get_instagram_accounts_info import instagram_accounts_info
+
+# Run the function
+instagram_accounts_info(instagram_pages = r.instagram_acc_ids,
+                        dir_name = "data_accounts",
+                        dir_name_full = "1.data_sources/instagram/data_accounts") 
+                        
+```
+
+```{r}
+library(arrow)
+
+# Load the feather dataset created in python to verify integrity
+test_of_df <- read_feather("data_accounts/instagram_accounts_info.feather")
+
+```
+
+
