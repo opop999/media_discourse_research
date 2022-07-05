@@ -1,11 +1,12 @@
+"""Import necessary modules."""
 import os
 from time import time
 import pandas as pd
 from torch import cuda
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
+from transformers.pipelines.pt_utils import KeyDataset
 from pyreadr import read_r, write_rds
 from datasets import Features, Value, Dataset
-from transformers.pipelines.pt_utils import KeyDataset
 from tqdm.auto import tqdm
 
 
@@ -56,7 +57,14 @@ def configure_analytical_pipeline(model_path: str, processing_device: int):
         pretrained_model_name_or_path=model_path, model_max_length=512)
     model = AutoModelForSequenceClassification.from_pretrained(
         pretrained_model_name_or_path=model_path)
-    return pipeline("sentiment-analysis", model=model, tokenizer=tokenizer, device=processing_device, padding="longest", truncation=True, max_length=512, top_k=3)
+    return pipeline("sentiment-analysis",
+                    model=model,
+                    tokenizer=tokenizer,
+                    device=processing_device,
+                    padding="longest",
+                    truncation=True,
+                    max_length=512,
+                    top_k=3)
 
 
 def get_only_new_files(path_to_input: str, path_to_output: str) -> list:
@@ -78,32 +86,36 @@ def get_only_new_files(path_to_input: str, path_to_output: str) -> list:
         path_to_input) if file.endswith(".rds")} - existing_processed_files))
 
 
-def filter_by_years(regex_files: list, year_filter: list) -> tuple:
+def filter_by_years(input_files: list, year_filter: list) -> tuple:
     """Filter the files by the specified years.
 
     Args:
-        regex_files (list): List of files in the input directory.
+        input_files (list): List of files in the input directory.
         year_filter (list): List of years to filter by.
 
     Returns:
         tuple: Tuple of filtered files.
     """
-    return tuple(file for file in regex_files if any(
+    return tuple(file for file in input_files if any(
         year in file for year in year_filter))
 
 
 # Outer loop over the files in the input directory.
-def sentiment_analysis_workflow(path_to_input: str, path_to_output: str, model_pipeline, regex_files_filtered: tuple, batch_by: int = 1) -> None:
+def sentiment_analysis_workflow(path_to_input: str,
+                                path_to_output: str,
+                                model_pipeline,
+                                input_files_filtered: tuple,
+                                batch_by: int = 1) -> None:
     """Performs the sentiment analysis workflow on selected files from the input directory.
 
     Args:
         path_to_input (str): Path to the input directory.
         path_to_output (str): Path to the output directory.
         model_pipeline (_type_): Pipeline for the sentiment analysis.
-        regex_files_filtered (tuple): Tuple of filtered files.
+        input_files_filtered (tuple): Tuple of filtered files.
         batch_by (int, optional): Size of the batch send to the model pipeline. Defaults to 1.
     """
-    for file in regex_files_filtered:
+    for file in input_files_filtered:
         # drive.mount('/content/drive', force_remount=True)
         # Reading one chunk from the input directory
         # Testing with first two texts.
@@ -114,8 +126,10 @@ def sentiment_analysis_workflow(path_to_input: str, path_to_output: str, model_p
             {'article_id': Value('string'), 'text': Value('string')}))
 
         print(
-            f"Starting sentinment analysis for chunk {file}. File contains {regex_chunk.shape[0]} articles.", flush=True)
-    # Inner loop over the individual texts in the dataframe. We can use batching, but for longer text sizes, it does not seem to make much (if any) difference.
+            f"""Starting sentinment analysis for chunk {file}.
+            File contains {regex_chunk.shape[0]} articles.""", flush=True)
+        # Inner loop over the individual texts in the dataframe. We can use batching,
+        # but for longer text sizes, it does not seem to make much (if any) difference.
         sentiment_dict = dict(zip(tqdm(KeyDataset(regex_chunk, "article_id")), model_pipeline(
             KeyDataset(regex_chunk, "text"), batch_size=batch_by)))
 
@@ -131,26 +145,32 @@ def sentiment_analysis_workflow(path_to_input: str, path_to_output: str, model_p
 
 
 # Specify path to input and output files
-path_to_input = "2.data_transformations/media_articles/data/regex_processed/chunks/"
-path_to_output = "4.data_analysis/sentiment_analysis/data/chunks/"
-model_path = "4.data_analysis/sentiment_analysis/data/model"
+PATH_TO_INPUT = "2.data_transformations/media_articles/data/regex_processed/chunks/"
+PATH_TO_OUTPUT = "4.data_analysis/sentiment_analysis/data/chunks/"
+MODEL_PATH = "4.data_analysis/sentiment_analysis/data/model"
 
 # Detect if GPU availabe
 get_gpu_info()
 
 # Download the model, run once
 model_download(
-    model_path, model_url="https://air.kiv.zcu.cz/public/CZERT-B_fb.zip")
+    model_path=MODEL_PATH, model_url="https://air.kiv.zcu.cz/public/CZERT-B_fb.zip")
 
 # Choose pipeline based on whether GPU is available. 0 and higher are CUDA devices and -1 is CPU
-model_pipeline = configure_analytical_pipeline(
-    model_path, processing_device=0 if cuda.is_available() else -1)
+model_configured = configure_analytical_pipeline(
+    model_path=MODEL_PATH, processing_device=0 if cuda.is_available() else -1)
 
-regex_files = get_only_new_files(path_to_input, path_to_output)
+regex_files = get_only_new_files(
+    path_to_input=PATH_TO_INPUT, path_to_output=PATH_TO_OUTPUT)
 
-regex_files_filtered = [filter_by_years(regex_files, year_filter=["2015"])[0]]
+regex_files_filtered = [filter_by_years(
+    input_files=regex_files, year_filter=["2015"])[0]]
 
 start_time = time()
 sentiment_analysis_workflow(
-    path_to_input, path_to_output, model_pipeline, regex_files_filtered, batch_by=4)
+    path_to_input=PATH_TO_INPUT,
+    path_to_output=PATH_TO_OUTPUT,
+    model_pipeline=model_configured,
+    input_files_filtered=regex_files_filtered,
+    batch_by=4)
 print(f"Finished sentiment analysis in {time() - start_time} seconds.")
