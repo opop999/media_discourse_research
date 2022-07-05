@@ -42,6 +42,7 @@ def model_download(model_path: str, model_url: str, overwrite_existing: bool = F
         unzip -j -d model/ model/model.zip
         rm model/model.zip
         """)
+    print(f"Model downloaded to folder {model_path}")
     else:
         print("Model already downloaded.")
 
@@ -119,11 +120,8 @@ def sentiment_analysis_workflow(path_to_input: str,
         batch_by (int, optional): Size of the batch send to the model pipeline. Defaults to 1.
     """
     for file in input_files_filtered:
-        # drive.mount('/content/drive', force_remount=True)
         # Reading one chunk from the input directory
-        # Testing with first two texts.
-        # DELETE THIS FILTERING
-        regex_chunk = read_r(path_to_input + file)[None][:50]
+        regex_chunk = read_r(path_to_input + file)[None]
 
         regex_chunk = Dataset.from_pandas(regex_chunk, features=Features(
             {'article_id': Value('string'), 'text': Value('string')}))
@@ -141,8 +139,7 @@ def sentiment_analysis_workflow(path_to_input: str,
         write_rds(f"{path_to_output}sentiment_{file}", sentiment_df)
         print(
             f"Finished the sentiment analysis of the chunk {file}", flush=True)
-    # drive.flush_and_unmount()
-        print('All changes made in this Colab session should now be visible in Drive.', flush=True)
+        print('All changes made in this session should now be visible locally.', flush=True)
 # End of outer loop.
     print("Finished the sentiment analysis of all chunks.")
 
@@ -157,7 +154,9 @@ get_gpu_info()
 
 # Download the model, run once
 model_download(
-    model_path=MODEL_PATH, model_url="https://air.kiv.zcu.cz/public/CZERT-B_fb.zip")
+    model_path=MODEL_PATH,
+    model_url="https://air.kiv.zcu.cz/public/CZERT-B_fb.zip",
+    overwrite_existing=False)
 
 # Choose pipeline based on whether GPU is available. 0 and higher are CUDA devices and -1 is CPU
 model_configured = configure_analytical_pipeline(
@@ -166,8 +165,8 @@ model_configured = configure_analytical_pipeline(
 regex_files = get_only_new_files(
     path_to_input=PATH_TO_INPUT, path_to_output=PATH_TO_OUTPUT)
 
-regex_files_filtered = [filter_by_years(
-    input_files=regex_files, year_filter=["2015"])[0]]
+regex_files_filtered = filter_by_years(
+    input_files=regex_files, year_filter=["2015"])
 
 start_time = time()
 sentiment_analysis_workflow(
