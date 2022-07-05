@@ -1,3 +1,6 @@
+# Workflow for sentiment analysis using BERT-like model.
+# * This workflow is intended to be run in the cloud on GPU.
+
 """Import necessary modules."""
 import os
 from time import time
