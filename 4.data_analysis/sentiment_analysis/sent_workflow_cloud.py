@@ -153,6 +153,9 @@ def sentiment_analysis_workflow(path_to_input: str,
 PATH_TO_INPUT = "2.data_transformations/media_articles/data/regex_processed/chunks/"
 PATH_TO_OUTPUT = "4.data_analysis/sentiment_analysis/data/chunks/"
 MODEL_PATH = "4.data_analysis/sentiment_analysis/data/model"
+MODEL_URL = "https://air.kiv.zcu.cz/public/CZERT-B_fb.zip"
+YEAR_FILTER = ["2015"]
+BATCH_BY = 4
 
 # Detect if GPU availabe
 get_gpu_info()
@@ -160,7 +163,7 @@ get_gpu_info()
 # Download the model, run once
 model_download(
     model_path=MODEL_PATH,
-    model_url="https://air.kiv.zcu.cz/public/CZERT-B_fb.zip",
+    model_url=MODEL_URL,
     overwrite_existing=False)
 
 # Choose pipeline based on whether GPU is available. 0 and higher are CUDA devices and -1 is CPU
@@ -171,7 +174,7 @@ regex_files = get_only_new_files(
     path_to_input=PATH_TO_INPUT, path_to_output=PATH_TO_OUTPUT)
 
 regex_files_filtered = filter_by_years(
-    input_files=regex_files, year_filter=["2015"])
+    input_files=regex_files, year_filter=YEAR_FILTER)
 
 start_time = time()
 sentiment_analysis_workflow(
@@ -179,5 +182,5 @@ sentiment_analysis_workflow(
     path_to_output=PATH_TO_OUTPUT,
     model_pipeline=model_configured,
     input_files_filtered=regex_files_filtered,
-    batch_by=4)
+    batch_by=BATCH_BY)
 print(f"Finished sentiment analysis in {time() - start_time} seconds.")
