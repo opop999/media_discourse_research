@@ -3,12 +3,13 @@
 
 """Import necessary modules."""
 import os
+from pathlib import Path
 from time import time
-import pandas as pd
+from json import dump
 from torch import cuda
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, pipeline
 from transformers.pipelines.pt_utils import KeyDataset
-from pyreadr import read_r, write_rds
+from pyreadr import read_r
 from datasets import Features, Value, Dataset
 from tqdm.auto import tqdm
 
@@ -42,7 +43,7 @@ def model_download(model_path: str, model_url: str, overwrite_existing: bool = F
         unzip -j -d model/ model/model.zip
         rm model/model.zip
         """)
-    print(f"Model downloaded to folder {model_path}")
+        print(f"Model downloaded to folder {model_path}")
     else:
         print("Model already downloaded.")
 
@@ -58,16 +59,17 @@ def configure_analytical_pipeline(model_path: str, processing_device: int):
         _type_: Pipeline
     """
     tokenizer = AutoTokenizer.from_pretrained(
-        pretrained_model_name_or_path=model_path, model_max_length=512)
+        pretrained_model_name_or_path=model_path,
+        model_max_length=512,
+        max_length=512,
+        padding="longest",
+        truncation=True)
     model = AutoModelForSequenceClassification.from_pretrained(
         pretrained_model_name_or_path=model_path)
     return pipeline("sentiment-analysis",
                     model=model,
                     tokenizer=tokenizer,
                     device=processing_device,
-                    padding="longest",
-                    truncation=True,
-                    max_length=512,
                     top_k=3)
 
 
@@ -84,9 +86,9 @@ def get_only_new_files(path_to_input: str, path_to_output: str) -> list:
     if not os.path.exists(path_to_output):
         # create directory if it doesn't exist
         os.makedirs(path_to_output)
-    existing_processed_files = {file.replace("sentiment_", "") for file in os.listdir(
-        path_to_output) if file.endswith(".rds")}
-    return sorted(({file for file in os.listdir(
+    existing_processed_files = {Path(file.replace("sentiment_", "")).stem for file in os.listdir(
+        path_to_output) if file.endswith((".rds", ".json"))}
+    return sorted(({Path(file).stem for file in os.listdir(
         path_to_input) if file.endswith(".rds")} - existing_processed_files))
 
 
@@ -121,7 +123,7 @@ def sentiment_analysis_workflow(path_to_input: str,
     """
     for file in input_files_filtered:
         # Reading one chunk from the input directory
-        regex_chunk = read_r(path_to_input + file)[None]
+        regex_chunk = read_r(f"{path_to_input + file}.rds")[None][:50]
 
         regex_chunk = Dataset.from_pandas(regex_chunk, features=Features(
             {'article_id': Value('string'), 'text': Value('string')}))
@@ -134,9 +136,9 @@ def sentiment_analysis_workflow(path_to_input: str,
         sentiment_dict = dict(zip(tqdm(KeyDataset(regex_chunk, "article_id")), model_pipeline(
             KeyDataset(regex_chunk, "text"), batch_size=batch_by)))
 
-        sentiment_df = pd.DataFrame(sentiment_dict.items(), columns=[
-            'article_id', 'sentiment'])
-        write_rds(f"{path_to_output}sentiment_{file}", sentiment_df)
+        with open(file=f"{path_to_output}sentiment_{file}.json", mode="w", encoding="utf8") as out:
+            dump(sentiment_dict, out, sort_keys=False)
+
         print(
             f"Finished the sentiment analysis of the chunk {file}", flush=True)
         print('All changes made in this session should now be visible locally.', flush=True)
@@ -166,7 +168,7 @@ regex_files = get_only_new_files(
     path_to_input=PATH_TO_INPUT, path_to_output=PATH_TO_OUTPUT)
 
 regex_files_filtered = filter_by_years(
-    input_files=regex_files, year_filter=["2015"])
+    input_files=regex_files, year_filter=["regex_full_articles_2022-05_part_3"])
 
 start_time = time()
 sentiment_analysis_workflow(
