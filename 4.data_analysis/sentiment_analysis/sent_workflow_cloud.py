@@ -123,7 +123,7 @@ def sentiment_analysis_workflow(path_to_input: str,
     """
     print(
         f"Starting sentiment analysis workflow on {len(input_files_filtered)} files.")
-    for count, file in enumerate(input_files_filtered):
+    for count, file in enumerate(input_files_filtered, start=1):
         # Reading one chunk from the input directory
         regex_chunk = read_r(f"{path_to_input + file}.rds")[None]
 
