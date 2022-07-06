@@ -60,16 +60,16 @@ def configure_analytical_pipeline(model_path: str, processing_device: int):
     """
     tokenizer = AutoTokenizer.from_pretrained(
         pretrained_model_name_or_path=model_path,
-        model_max_length=512,
-        max_length=512,
-        padding="longest",
-        truncation=True)
+        model_max_length=512)
     model = AutoModelForSequenceClassification.from_pretrained(
         pretrained_model_name_or_path=model_path)
     return pipeline("sentiment-analysis",
                     model=model,
                     tokenizer=tokenizer,
                     device=processing_device,
+                    max_length=512,
+                    padding="longest",
+                    truncation=True,
                     top_k=3)
 
 
@@ -121,12 +121,14 @@ def sentiment_analysis_workflow(path_to_input: str,
         input_files_filtered (tuple): Tuple of filtered files.
         batch_by (int, optional): Size of the batch send to the model pipeline. Defaults to 1.
     """
-    for file in input_files_filtered:
+    print(
+        f"Starting sentiment analysis workflow on {len(input_files_filtered)} files.")
+    for count, file in enumerate(input_files_filtered):
         # Reading one chunk from the input directory
-        regex_chunk = read_r(f"{path_to_input + file}.rds")[None][:50]
+        regex_chunk = read_r(f"{path_to_input + file}.rds")[None]
 
         regex_chunk = Dataset.from_pandas(regex_chunk, features=Features(
-            {'article_id': Value('string'), 'text': Value('string')}))
+            {"article_id": Value("string"), "text": Value("string")}))
 
         print(
             f"""Starting sentinment analysis for chunk {file}.
@@ -140,8 +142,9 @@ def sentiment_analysis_workflow(path_to_input: str,
             dump(sentiment_dict, out, sort_keys=False)
 
         print(
-            f"Finished the sentiment analysis of the chunk {file}", flush=True)
-        print('All changes made in this session should now be visible locally.', flush=True)
+            f"Finished the sentiment analysis of the chunk {file}, nr. {count} out of {len(input_files_filtered)}.",
+            flush=True)
+        print("All changes made in this session should now be visible locally.", flush=True)
 # End of outer loop.
     print("Finished the sentiment analysis of all chunks.")
 
@@ -168,7 +171,7 @@ regex_files = get_only_new_files(
     path_to_input=PATH_TO_INPUT, path_to_output=PATH_TO_OUTPUT)
 
 regex_files_filtered = filter_by_years(
-    input_files=regex_files, year_filter=["regex_full_articles_2022-05_part_3"])
+    input_files=regex_files, year_filter=["2015"])
 
 start_time = time()
 sentiment_analysis_workflow(
