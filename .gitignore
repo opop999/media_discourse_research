@@ -47,6 +47,7 @@ docs/fb_cookies_1.json
 2.data_transformations/media_articles/data/regex_processed/chunks/*.rds
 2.data_transformations/media_articles/data/udpipe_processed/chunks/*.rds
 4.data_analysis/named_entity_recognition/data/chunks/*.rds
+4.data_analysis/sentiment_analysis/data/chunks/*.json
 1.data_sources/twitter/data/*.rds
 1.data_sources/twitter/data/*.feather
 

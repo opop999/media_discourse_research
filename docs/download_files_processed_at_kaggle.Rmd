@@ -2,7 +2,11 @@
 source ~/.zshrc
 conda activate $CONDA_ENV
 # Downloads all data from specified directory
-kaggle kernels output $KAGGLE_REPO
+kaggle kernels output $KAGGLE_REPO -p 4.data_analysis/sentiment_analysis/data/chunks
+
+mv 4.data_analysis/sentiment_analysis/data/chunks/output/* 4.data_analysis/sentiment_analysis/data/chunks
+s
+rm -r 4.data_analysis/sentiment_analysis/data/chunks/output/
 
 ```
 
