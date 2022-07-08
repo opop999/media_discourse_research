@@ -5,10 +5,10 @@ conda activate $CONDA_ENV
 kaggle kernels output $KAGGLE_REPO -p 4.data_analysis/sentiment_analysis/data/chunks
 
 mv 4.data_analysis/sentiment_analysis/data/chunks/output/* 4.data_analysis/sentiment_analysis/data/chunks
-s
+
 rm -r 4.data_analysis/sentiment_analysis/data/chunks/output/
+  
+rm 4.data_analysis/sentiment_analysis/data/chunks/*.log
 
 ```
-
-
 
