@@ -40,7 +40,7 @@ def model_download(model_path: str, model_url: str, overwrite_existing: bool = F
         os.system(f"""
         mkdir -p {model_path}
         wget {model_url} -O {model_path}/model.zip
-        unzip -j -d {model_path}/model/ {model_path}/model.zip
+        unzip -j -d {model_path} {model_path}/model.zip
         rm {model_path}/model.zip
         """)
         print(f"Model downloaded to folder {model_path}")
