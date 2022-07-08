@@ -17,6 +17,19 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 ```
 
+# Average length of migration articles per month
+```{r}
+average_monthly_length <-
+  list.files(path = "1.data_sources/media_articles/data/full/chunks/",
+             pattern = "*.rds",
+             full.names = TRUE)  %>% 
+  map_dfr(~ transmute(readRDS(.), PublishDate, len = str_count(Content, "\\w+"))) %>% 
+  distinct() %>% 
+  mutate(month = as.Date(cut(PublishDate, breaks = "1 month"))) %>% 
+  group_by(month) %>% 
+  summarize(avg_len = mean(len))
+```
+
 # Average article length per media outlet
 ```{r}
 all_articles_lengths <-
