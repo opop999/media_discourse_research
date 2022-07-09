@@ -18,20 +18,18 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 Use Python to process the full media article chunks with regex, saving all of them
 ```{python}
-from os import listdir
+import os
 from pathlib import Path
-
-import pandas as pd
 from pyreadr import read_r, write_rds
-
+from tqdm.auto import tqdm
 from media_articles.cs_text_pre_process import pattern_preprocessing_cs
 
-# List all .rds chunks and their full path
-chunks_paths = list(Path("../1.data_sources/media_articles/data/full/chunks").glob("*.rds"))
-chunks_paths.sort()
+INPUT_DIR = "../1.data_sources/media_articles/data/full/chunks/"
+OUTPUT_DIR = "media_articles/data/regex_processed/chunks/"
 
-chunk_names = listdir("../1.data_sources/media_articles/data/full/chunks")
-chunk_names.sort()
+# List all .rds chunks and their full path
+chunks = sorted([Path(file).stem for file in os.listdir(
+    INPUT_DIR) if file.endswith(".rds")])
 
 ## We can read all of the chunks into one large dataset. However, the further processing might prove to be to memory demanding.
 # media_list_of_df = (read_r(file)[None][["Code", "PublishDate", "Title", "Content"]] \
@@ -39,16 +37,16 @@ chunk_names.sort()
 # media_df = pd.concat(media_list_of_df, ignore_index=True)
 
 # Loop over the list of .rds chunks, load each one in, process it and save it to a different folder
-for count, path in enumerate(chunks_paths):
-    media_df = read_r(path)[None][["Code", "Title", "Content"]] \
-                         .rename(columns = {"Code":"article_id", "Title":"title", "Content":"text"})
+for chunk in tqdm(chunks):
+    media_df = read_r(f"{INPUT_DIR}{chunk}.rds")[None][["Code", "Title", "Content"]] \
+        .rename(columns={"Code": "article_id", "Title": "title", "Content": "text"})
     media_df["text"] = media_df["title"] + ". " + media_df["text"]
-    media_df.drop("title", axis = 1, inplace=True)
-    media_df = pattern_preprocessing_cs(df=media_df,
-               column="text",
-               pattern=r"<(.|\n)*?>|[^ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮĚÓa-zA-Z0-9\.\?\! ]")
-    write_rds("media_articles/data/regex_processed/chunks/regex_" + chunk_names[count], media_df, compress="gzip")
-    print(f"Chunk nr. {count} processed.", flush=True)
+    media_df.drop("title", axis=1, inplace=True)
+    media_df = pattern_preprocessing_cs(input_df=media_df,
+                                        column="text",
+                                        pattern=r"<(.|\n)*?>|[^ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮĚÓa-zA-Z0-9\.\?\! ]")
+    write_rds(f"{OUTPUT_DIR}regex_{chunk}.rds", media_df, compress="gzip")
+    print(f"Chunk {chunk} processed.", flush=True)
 
 ```
 
@@ -70,13 +68,12 @@ for (i in list_of_processed_chunks) {
     lapply(names(list_of_chunks), function(df) {
       saveRDS(list_of_chunks[[df]], file = paste0(substr(i, 1, nchar(i) - 4), "_part_", df, ".rds"))
     })
-    
+
     unlink(i)
   }
 }
 
 # purrr::map2(list_of_chunks, paste0("media_articles/data/df_chunks/non_processed/cs_chunk_", names(list_of_chunks), ".rds"), saveRDS)
-
 ```
 
 Paralellized version (works on Linux)
@@ -87,24 +84,22 @@ list_of_processed_chunks <- list.files(path = "media_articles/data/regex_process
 library(parallel)
 
 process_df <- function(i) {
-    
-    full_df <- readRDS(i)
+  full_df <- readRDS(i)
 
-    no_of_chunks <- ceiling(nrow(full_df) / 3500) # 3500 is the desired max number of rows
+  no_of_chunks <- ceiling(nrow(full_df) / 3500) # 3500 is the desired max number of rows
 
-    chunk_nr_index <- ceiling(1:nrow(full_df) / nrow(full_df) * no_of_chunks)
+  chunk_nr_index <- ceiling(1:nrow(full_df) / nrow(full_df) * no_of_chunks)
 
-    list_of_chunks <- split(full_df, chunk_nr_index)
+  list_of_chunks <- split(full_df, chunk_nr_index)
 
-    lapply(names(list_of_chunks), function(df) {
-      saveRDS(list_of_chunks[[df]], file = paste0(substr(i, 1, nchar(i) - 4), "_part_", df, ".rds"))
-    })
-    
-    unlink(i)
+  lapply(names(list_of_chunks), function(df) {
+    saveRDS(list_of_chunks[[df]], file = paste0(substr(i, 1, nchar(i) - 4), "_part_", df, ".rds"))
+  })
+
+  unlink(i)
 }
 
 mclapply(list_of_processed_chunks, process_df, mc.cores = detectCores() - 1)
-
 ```
 
 # Processing regex-cleaned chunks with UDPIPE model (via API)
@@ -118,14 +113,14 @@ setwd("media_articles")
 
 # Identify dataset chunks of interest
 all_chunks_path_udpipe <- list.files(path = file.path("data", "regex_processed", "chunks"), pattern = "*.rds", full.names = TRUE) %>%
-                    .[grep(pattern = udpipe_period, ., invert = udpipe_exclude)] %>%
-                    sort() %>% 
-                    .[2:37]
+  .[grep(pattern = udpipe_period, ., invert = udpipe_exclude)] %>%
+  sort() %>%
+  .[2:37]
 
 all_chunks_name_udpipe <- list.files(path = file.path("data", "regex_processed", "chunks"), pattern = "*.rds", full.names = FALSE) %>%
-                    .[grep(pattern = udpipe_period, ., invert = udpipe_exclude)] %>%
-                    sort() %>% 
-                    .[2:37]
+  .[grep(pattern = udpipe_period, ., invert = udpipe_exclude)] %>%
+  sort() %>%
+  .[2:37]
 
 # Run the script as a RStudio job
 rstudioapi::jobRunScript(path = "udpipe_rstudio_jobs.R", importEnv = TRUE)
@@ -135,32 +130,31 @@ Integrity check: Which years have we processed with UDPIPE
 ```{r}
 # Read the UDPIPE processed chunks back in, we only the id and date
 udpipe_df_ids <- list.files(path = "media_articles/data/udpipe_processed", pattern = "*.rds", full.names = TRUE) %>%
-  map_dfr(readRDS) %>% 
+  map_dfr(readRDS) %>%
   pull(doc_id) %>%
   unique() # keep only unique ids
 
 # Check which ids are collected for the specific period
 full_articles_selected_period <- list.files(path = "media_articles/data/regex_processed/chunks", pattern = "*.rds", full.names = TRUE) %>%
   .[grep("2015", .)] %>%
-  map_dfr(readRDS, .id = 'filename')
+  map_dfr(readRDS, .id = "filename")
 
 full_articles_dates <- list.files(path = "../1.data_sources/media_articles/data/full/chunks/", pattern = "*.rds", full.names = TRUE) %>%
-  map_dfr(readRDS) %>% 
-  select(PublishDate, Code) 
+  map_dfr(readRDS) %>%
+  select(PublishDate, Code)
 
-filtered_dates <- full_articles_dates[full_articles_dates$Code %in% udpipe_df_ids,]
+filtered_dates <- full_articles_dates[full_articles_dates$Code %in% udpipe_df_ids, ]
 
 summary(filtered_dates$PublishDate)
 
 # Function to compare the two id vectors
-xtab_set <- function(A, B){
-    both    <-  union(A, B)
-    inA     <-  both %in% A
-    inB     <-  both %in% B
-    return(table(inA, inB))
+xtab_set <- function(A, B) {
+  both <- union(A, B)
+  inA <- both %in% A
+  inB <- both %in% B
+  return(table(inA, inB))
 }
 
 xtab_set(udpipe_df_ids, udpipe_df_ids_new)
-
 ```
 
