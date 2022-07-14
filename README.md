@@ -101,12 +101,42 @@
 
 ```mermaid
 graph TD;
+
+  style newton fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style disinfo fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style twitter fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style media fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style fb_ads fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style crowdtangle fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style soc_media fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style visual_data fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style gdelt fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style gdelt fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style complementary fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style semantic fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style sentiment fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style vision fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style wiki_gtrends fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style network fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style complementary_analyses fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style raw_data fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style regex fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style udpipe fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style clean_data fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style eda fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style udpipe fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style nlp fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style counts fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style length fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style lda fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style ner fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+    
   newton[Newton Media API: <br> full media articles and content count] -.-> media([News media output])
   disinfo[EUvsDisinfo: <br> verified disinformation scrape] -.-> media
   twitter[Twitter API] -.-> soc_media([Journalistic actors on social media])
   fb_ads[Facebook Ads API: <br> Paid advertising] -.-> soc_media
   crowdtangle[Crowdtangle API: <br> FB & Instagram public posts] -.-> soc_media
-  media ----> raw_data[(Raw data)]
+  media ----> raw_data[(RAW DATA)]
   soc_media ---> raw_data
   visual_data[Visual data: <br> web scraping and Selenium] -.-> complementary([Contextual data])
   gdelt[GDELT API] -.-> complementary
@@ -114,17 +144,18 @@ graph TD;
   complementary --> raw_data
   raw_data ===> regex([Regex preprocessing])
   regex ==> udpipe([UDPIPE preprocessing])
-  udpipe ===> clean_data[(Processed data)]
-  clean_data ----> eda([Exploratory Data Analysis])
-  clean_data ----> nlp([Natural Language Processing])
-  clean_data ----> complementary_analyses([Complementary analyses])
+  udpipe ===> clean_data[(PROCESSED DATA)]
+  clean_data --> eda([Exploratory Data Analysis])
+  clean_data ====> nlp([NATURAL LANGUAGE PROCESSING])
+  clean_data --> complementary_analyses([Complementary analyses])
   eda --> counts[Counts over time]
   eda --> length[Average content lenght]
   complementary_analyses --> network[Network analysis]
   complementary_analyses --> vision[Visual analysis]
   nlp --> sentiment[Sentiment analysis]
   nlp --> semantic[Semantic analysis]
-    
-  
+  nlp --> ner[Named Entity Recognition]
+  nlp --> lda[LDA topic modeling]
+
 ```
 
