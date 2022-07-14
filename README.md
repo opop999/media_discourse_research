@@ -87,3 +87,28 @@ Overview last updated: 20 June 2022
 - Stockholm June 2022 conference abstract & presentation
 - CCL Vienna June 2022 presentation
 - Article 1 draft (NER & KWIC concordances) *work in progress*
+
+***
+
+### Project workflow diagram
+
+```mermaid
+graph TD;
+  newton[Newton Media API] -.-> media{{Media articles}}
+  disinfo[EUvsDisinfo: verified disinformation] -.-> media
+  twitter[Twitter API] -.-> soc_media{{Journalistic actors social media activity}}
+  fb_ads[Facebook Political Ads API] -.-> soc_media
+  crowdtangle[Crowdtangle API: FB & Instagram posts] -.-> soc_media
+  media ----> raw_data[(Raw data)]
+  soc_media ---> raw_data
+  complementary{{Complementary}} --> raw_data
+  raw_data ==> regex([Regex preprocessing])
+  raw_data ==> udpipe([UDPIPE preprocessing])
+  regex ==> clean_data[(Processed data)]
+  udpipe ==> clean_data
+  clean_data ----> eda([Exploratory data analysis])
+  eda 
+    
+  
+```
+
