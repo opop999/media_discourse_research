@@ -1,6 +1,13 @@
-# Repository of scripts and datasets for research on migration discourse in the Czech and Swedish mediasphere
+# Czech media migration discourse research
+## Repository of scripts, workflow and output.
 
-Overview last updated: 20 June 2022
+*Overview last updated: 14 July 2022*
+
+***
+
+> NOTE: Some data could not be stored in this repository, due to their proprietary nature. This primarily affects media data obtained from Newton Media API.
+
+***
 
 ## **Structure:**
 
@@ -90,7 +97,7 @@ Overview last updated: 20 June 2022
 
 ***
 
-### Project workflow diagram
+## Project workflow diagram:
 
 ```mermaid
 graph TD;
