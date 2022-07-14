@@ -94,20 +94,29 @@ Overview last updated: 20 June 2022
 
 ```mermaid
 graph TD;
-  newton[Newton Media API] -.-> media{{Media articles}}
-  disinfo[EUvsDisinfo: verified disinformation] -.-> media
-  twitter[Twitter API] -.-> soc_media{{Journalistic actors social media activity}}
-  fb_ads[Facebook Political Ads API] -.-> soc_media
-  crowdtangle[Crowdtangle API: FB & Instagram posts] -.-> soc_media
+  newton[Newton Media API: <br> full media articles and content count] -.-> media([News media output])
+  disinfo[EUvsDisinfo: <br> verified disinformation scrape] -.-> media
+  twitter[Twitter API] -.-> soc_media([Journalistic actors on social media])
+  fb_ads[Facebook Ads API: <br> Paid advertising] -.-> soc_media
+  crowdtangle[Crowdtangle API: <br> FB & Instagram public posts] -.-> soc_media
   media ----> raw_data[(Raw data)]
   soc_media ---> raw_data
-  complementary{{Complementary}} --> raw_data
-  raw_data ==> regex([Regex preprocessing])
-  raw_data ==> udpipe([UDPIPE preprocessing])
-  regex ==> clean_data[(Processed data)]
-  udpipe ==> clean_data
-  clean_data ----> eda([Exploratory data analysis])
-  eda 
+  visual_data[Visual data: <br> web scraping and Selenium] -.-> complementary([Contextual data])
+  gdelt[GDELT API] -.-> complementary
+  wiki_gtrends[Wikipedia Views & Google Trends: <br> Salience of migration] -.-> complementary
+  complementary --> raw_data
+  raw_data ===> regex([Regex preprocessing])
+  regex ==> udpipe([UDPIPE preprocessing])
+  udpipe ===> clean_data[(Processed data)]
+  clean_data ----> eda([Exploratory Data Analysis])
+  clean_data ----> nlp([Natural Language Processing])
+  clean_data ----> complementary_analyses([Complementary analyses])
+  eda --> counts[Counts over time]
+  eda --> length[Average content lenght]
+  complementary_analyses --> network[Network analysis]
+  complementary_analyses --> vision[Visual analysis]
+  nlp --> sentiment[Sentiment analysis]
+  nlp --> semantic[Semantic analysis]
     
   
 ```
