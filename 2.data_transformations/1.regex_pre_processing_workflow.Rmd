@@ -1,5 +1,5 @@
 ---
-title: "Text Pre-processing"
+title: "Regex Pre-processing"
 ---
 Load necessary packages
 ```{r}
@@ -141,61 +141,5 @@ process_df <- function(i) {
 }
 
 mclapply(list_of_processed_chunks, process_df, mc.cores = detectCores() - 1)
-```
-
-# Processing regex-cleaned chunks with UDPIPE model (via API)
-# Using RStudio jobs to parallelize 
-```{r}
-# Set up parameters for this job
-udpipe_period <- "2022"
-udpipe_exclude <- FALSE
-
-setwd("media_articles")
-
-# Identify dataset chunks of interest
-all_chunks_path_udpipe <- list.files(path = file.path("data", "regex_processed", "chunks"), pattern = "*.rds", full.names = TRUE) %>%
-  .[grep(pattern = udpipe_period, ., invert = udpipe_exclude)] %>%
-  sort() %>%
-  .[2:37]
-
-all_chunks_name_udpipe <- list.files(path = file.path("data", "regex_processed", "chunks"), pattern = "*.rds", full.names = FALSE) %>%
-  .[grep(pattern = udpipe_period, ., invert = udpipe_exclude)] %>%
-  sort() %>%
-  .[2:37]
-
-# Run the script as a RStudio job
-rstudioapi::jobRunScript(path = "udpipe_rstudio_jobs.R", importEnv = TRUE)
-```
-
-Integrity check: Which years have we processed with UDPIPE 
-```{r}
-# Read the UDPIPE processed chunks back in, we only the id and date
-udpipe_df_ids <- list.files(path = "media_articles/data/udpipe_processed", pattern = "*.rds", full.names = TRUE) %>%
-  map_dfr(readRDS) %>%
-  pull(doc_id) %>%
-  unique() # keep only unique ids
-
-# Check which ids are collected for the specific period
-full_articles_selected_period <- list.files(path = "media_articles/data/regex_processed/chunks", pattern = "*.rds", full.names = TRUE) %>%
-  .[grep("2015", .)] %>%
-  map_dfr(readRDS, .id = "filename")
-
-full_articles_dates <- list.files(path = "../1.data_sources/media_articles/data/full/chunks/", pattern = "*.rds", full.names = TRUE) %>%
-  map_dfr(readRDS) %>%
-  select(PublishDate, Code)
-
-filtered_dates <- full_articles_dates[full_articles_dates$Code %in% udpipe_df_ids, ]
-
-summary(filtered_dates$PublishDate)
-
-# Function to compare the two id vectors
-xtab_set <- function(A, B) {
-  both <- union(A, B)
-  inA <- both %in% A
-  inB <- both %in% B
-  return(table(inA, inB))
-}
-
-xtab_set(udpipe_df_ids, udpipe_df_ids_new)
 ```
 

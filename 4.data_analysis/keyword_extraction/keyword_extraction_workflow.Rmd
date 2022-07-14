@@ -31,7 +31,7 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # Import media labels
-media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
 
 ```
 
@@ -39,20 +39,20 @@ media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels
 ## Read data of interest
 ```{r}
 
-clean_articles_2015 <- list.files(path = "../2.data_transformations/media_articles/data/udpipe_processed/chunks/",
+clean_articles_2015 <- list.files(path = "../../2.data_transformations/media_articles/data/udpipe_processed/chunks/",
                                   pattern = "*.rds",
                                   full.names = TRUE) %>%
   .[grepl("2015-(10|11|12)", .)] %>% # "(2015-(10|11|12))|(2022-(02|03|04))"
   map_dfr(readRDS)
 
-clean_articles_2022 <- list.files(path = "../2.data_transformations/media_articles/data/udpipe_processed/chunks/",
+clean_articles_2022 <- list.files(path = "../../2.data_transformations/media_articles/data/udpipe_processed/chunks/",
                                   pattern = "*.rds",
                                   full.names = TRUE) %>%
   .[grepl("2022-(02|03|04)", .)] %>% 
   map_dfr(readRDS)
 
 # Import media labels
-media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
 
 ```
 

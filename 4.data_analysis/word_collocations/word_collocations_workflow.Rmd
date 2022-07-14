@@ -31,7 +31,7 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # Import media labels
-media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
 
 ```
 
@@ -41,10 +41,13 @@ media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels
 ## X.1. Load the summarized data for selected periods
 
 ```{r}
-colocs_combined <- bind_rows(readRDS("word_collocations/data/mainstream_2015_collocs.rds") %>% mutate(period_type = "mainstream_2015"),
-                             readRDS("word_collocations/data/alternative_2015_collocs.rds") %>% mutate(period_type = "alternative_2015"),
-                             readRDS("word_collocations/data/mainstream_2022_collocs.rds") %>% mutate(period_type = "mainstream_2022"),
-                             readRDS("word_collocations/data/alternative_2022_collocs.rds") %>% mutate(period_type = "alternative_2022"))
+colocs_combined <-
+  bind_rows(
+    readRDS("data/mainstream_2015_collocs.rds") %>% mutate(period_type = "mainstream_2015"),
+    readRDS("data/alternative_2015_collocs.rds") %>% mutate(period_type = "alternative_2015"),
+    readRDS("data/mainstream_2022_collocs.rds") %>% mutate(period_type = "mainstream_2022"),
+    readRDS("data/alternative_2022_collocs.rds") %>% mutate(period_type = "alternative_2022")
+  )
 
 lenght_colloc <- 3L
 ```
@@ -105,7 +108,7 @@ collocs_2015_alt <- colocs_combined %>%
    ncol = 1,
    nrow = 2)
  
- ggsave("../5.write_up/presentation_CCL_march_2022/graphics/collocs_2015.png", device = "png",
+ ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/collocs_2015.png", device = "png",
        width = 1920, height = 1080, units = "px")
  
 ```
@@ -163,7 +166,7 @@ collocs_2022_alt <- colocs_combined %>%
    ncol = 1,
    nrow = 2)
  
- ggsave("../5.write_up/presentation_CCL_march_2022/graphics/collocs_2022.png", device = "png",
+ ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/collocs_2022.png", device = "png",
        width = 1920, height = 1080, units = "px")
  
 ```
