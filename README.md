@@ -130,7 +130,15 @@ graph TD;
   style length fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style lda fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style ner fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
-    
+  style analyzed_data fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style analysis fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style ccl fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style stockholm fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style 1st_article fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style finish fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style communication fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+
+
   newton[Newton Media API: <br> full media articles and content count] -.-> media([News media output])
   disinfo[EUvsDisinfo: <br> verified disinformation scrape] -.-> media
   twitter[Twitter API] -.-> soc_media([Journalistic actors on social media])
@@ -145,17 +153,25 @@ graph TD;
   raw_data ===> regex([Regex preprocessing])
   regex ==> udpipe([UDPIPE preprocessing])
   udpipe ===> clean_data[(PROCESSED DATA)]
-  clean_data --> eda([Exploratory Data Analysis])
-  clean_data ====> nlp([NATURAL LANGUAGE PROCESSING])
-  clean_data --> complementary_analyses([Complementary analyses])
+  
+  clean_data ====> analysis([Data Analysis])
+  analysis --> eda([Exploratory Data Analysis])
+  analysis --> nlp([NATURAL LANGUAGE PROCESSING])
+  analysis --> complementary_analyses([Complementary analyses])
   eda --> counts[Counts over time]
   eda --> length[Average content lenght]
   complementary_analyses --> network[Network analysis]
-  complementary_analyses --> vision[Visual analysis]
+  complementary_analyses --> vision[Object detection]
   nlp --> sentiment[Sentiment analysis]
   nlp --> semantic[Semantic analysis]
   nlp --> ner[Named Entity Recognition]
   nlp --> lda[LDA topic modeling]
+  analysis ====> analyzed_data[(ANALYZED DATA)]
+  analyzed_data ====> communication{PUBLISHING & OUTREACH}
+  ccl[Vienna University <br> Computational Communication Lab <br> presentation <br> June 2022] --> communication
+  stockholm[Stockholm University <br> Powers of Language <br> conference presentation <br> June 2022] --> communication
+  1st_article[First article draft <br> summer 2022] --> communication
+  communication ====> finish((PROJECT COMPLETION))
 
 ```
 
