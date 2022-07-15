@@ -145,6 +145,7 @@ graph TD;
   style freq fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style trees fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style kw fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style fact_check fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
 
   newton[Newton Media API: <br> full media articles and content count] -.-> media([News media output])
   labels[Media type labelled dataset <br> Vaclav Cvrcek et al.] -.-> media
@@ -155,7 +156,8 @@ graph TD;
   media ----> raw_data[(RAW DATA)]
   soc_media ---> raw_data
   visual_data[Visual data: <br> web scraping and Selenium] -.-> complementary([Contextual data])
-  gdelt[GDELT API] -.-> complementary
+  gdelt[Global Database of Events, Language and Tone <br> GDELT API] -.-> complementary
+  fact_check[Fact-checked claims about migration <br> demagog.cz] -.-> complementary
   wiki_gtrends[Wikipedia Views & Google Trends: <br> Salience of migration] -.-> complementary
   complementary --> raw_data
   raw_data ===> regex([Regex preprocessing])
