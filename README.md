@@ -184,7 +184,7 @@ graph TD;
   counts[Counts over time <br> and media type] --> eda
   length[Content length over time <br> and media type] --> eda
   trees[Key sentences dependency trees: Treex] --> eda
-  network[Network analysis of <br> online media <br> YouTube channels <br>: igraph] --> complementary_analyses 
+  network[Network analysis of <br> online media <br> YouTube channels: <br> igraph] --> complementary_analyses 
   vision[Object detection: <br> YOLO model] --> complementary_analyses
   sentiment[Sentiment analysis: <br> Czech Subjectivity Lexicon & <br> Czert BERT model] --> nlp
   ws_graphs[Word shift graphs: <br> shifterator] --> nlp
