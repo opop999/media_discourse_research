@@ -138,6 +138,13 @@ graph TD;
   style finish fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style communication fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style labels fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style collocs fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style concord fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style doc_sim fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style word_sim fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style freq fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style trees fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style kw fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
 
   newton[Newton Media API: <br> full media articles and content count] -.-> media([News media output])
   labels[Media type labelled dataset <br> Vaclav Cvrcek et al.] -.-> media
@@ -155,22 +162,29 @@ graph TD;
   regex ==> udpipe([UDPIPE preprocessing])
   udpipe ===> clean_data[(PROCESSED DATA)]
   clean_data ====> analysis([Data Analysis])
-  analysis --> eda([Exploratory Data Analysis])
-  analysis --> nlp([Natural Language Processing])
-  analysis --> complementary_analyses([Complementary analyses])
-  eda --> counts[Counts over time]
-  eda --> length[Average content lenght]
-  complementary_analyses --> network[Network analysis]
-  complementary_analyses --> vision[Object detection]
-  nlp --> sentiment[Sentiment analysis]
-  nlp --> semantic[Semantic analysis]
-  nlp --> ner[Named Entity Recognition]
-  nlp --> lda[LDA topic modeling]
-  analysis ====> analyzed_data[(ANALYZED DATA)]
+  eda([Exploratory Data Analysis]) === analysis
+  nlp([Natural Language Processing]) ===== analysis 
+  complementary_analyses([Complementary analyses]) === analysis 
+  counts[Counts over time] --> eda
+  length[Average content length] --> eda
+  network[Network analysis] --> complementary_analyses 
+  vision[Object detection] --> complementary_analyses
+  sentiment[Sentiment analysis] --> nlp
+  semantic[Semantic analysis] --> nlp
+  ner[Named Entity Recognition] --> nlp
+  lda[Topic modeling] --> nlp
+  collocs[Collocations] --> nlp
+  concord[KWIC Concordances] --> nlp
+  doc_sim[Document similarity] --> nlp
+  word_sim[Word embeddings] --> nlp
+  freq[Key term frequencies] --> nlp
+  trees[Key sentences dependency trees] --> nlp
+  kw[Key Word extraction] --> nlp
+  analysis =====> analyzed_data[(ANALYZED DATA)]
   analyzed_data ====> communication{PUBLISHING & OUTREACH}
-  ccl[Vienna University <br> Computational Communication Lab <br> presentation <br> June 2022] --> communication
-  stockholm[Stockholm University <br> Powers of Language <br> conference presentation <br> June 2022] --> communication
-  1st_article[First article draft <br> summer 2022] --> communication
+  ccl[Vienna University <br> Computational Communication Lab <br> presentation <br> June 2022] --- communication
+  stockholm[Stockholm University <br> Powers of Language <br> conference presentation <br> June 2022] --- communication
+  1st_article[First article draft <br> summer 2022] --- communication
   communication ====> finish((PROJECT COMPLETION))
 
 ```
