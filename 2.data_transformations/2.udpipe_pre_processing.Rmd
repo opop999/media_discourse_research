@@ -1,0 +1,68 @@
+---
+title: "UDPIPE Pre-processing"
+---
+Load necessary packages
+```{r}
+# Package names
+packages <- c("dplyr", "stringr", "purrr", "tidyr")
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+```
+
+# Processing regex-cleaned chunks with UDPIPE model (via API)
+# Using RStudio jobs to parallelize 
+```{r}
+# Set up parameters for this job
+udpipe_period <- "*"
+udpipe_exclude <- FALSE
+
+setwd("media_articles")
+
+# Identify dataset chunks of interest
+all_regex_chunks <- list.files(path = file.path("data", "regex_processed", "chunks"), pattern = "*.rds", full.names = TRUE) %>%
+  .[grep(pattern = udpipe_period, ., invert = udpipe_exclude)] %>%
+  sort()
+
+# Run the script as a RStudio job
+rstudioapi::jobRunScript(path = "udpipe_rstudio_jobs.R", importEnv = TRUE)
+```
+
+Integrity check: Which years have we processed with UDPIPE 
+```{r}
+# Read the UDPIPE processed chunks back in, we only the id and date
+udpipe_df_ids <- list.files(path = "media_articles/data/udpipe_processed", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS) %>%
+  pull(doc_id) %>%
+  unique() # keep only unique ids
+
+# Check which ids are collected for the specific period
+full_articles_selected_period <- list.files(path = "media_articles/data/regex_processed/chunks", pattern = "*.rds", full.names = TRUE) %>%
+  .[grep("2015", .)] %>%
+  map_dfr(readRDS, .id = "filename")
+
+full_articles_dates <- list.files(path = "../1.data_sources/media_articles/data/full/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS) %>%
+  select(PublishDate, Code)
+
+filtered_dates <- full_articles_dates[full_articles_dates$Code %in% udpipe_df_ids, ]
+
+summary(filtered_dates$PublishDate)
+
+# Function to compare the two id vectors
+xtab_set <- function(A, B) {
+  both <- union(A, B)
+  inA <- both %in% A
+  inB <- both %in% B
+  return(table(inA, inB))
+}
+
+xtab_set(udpipe_df_ids, udpipe_df_ids_new)
+```
+

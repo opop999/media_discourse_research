@@ -1,6 +1,13 @@
-# Repository of scripts and datasets for research on migration discourse in the Czech and Swedish mediasphere
+# Czech media migration discourse research
+## Repository of scripts, workflow and output.
 
-Overview last updated: 20 June 2022
+*Overview last updated: 14 July 2022*
+
+***
+
+> NOTE: Some data could not be stored in this repository, due to their proprietary nature. This primarily affects media data obtained from Newton Media API.
+
+***
 
 ## **Structure:**
 
@@ -87,3 +94,84 @@ Overview last updated: 20 June 2022
 - Stockholm June 2022 conference abstract & presentation
 - CCL Vienna June 2022 presentation
 - Article 1 draft (NER & KWIC concordances) *work in progress*
+
+***
+
+## Project workflow diagram:
+
+```mermaid
+graph TD;
+
+  style newton fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style disinfo fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style twitter fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style media fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style fb_ads fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style crowdtangle fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style soc_media fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style visual_data fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style gdelt fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style gdelt fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style complementary fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style semantic fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style sentiment fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style vision fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style wiki_gtrends fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style network fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style complementary_analyses fill:#2b9bf4,color:#fff,stroke:#b4263d,stroke-width:1.5px
+  style raw_data fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style regex fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style udpipe fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style clean_data fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style eda fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style udpipe fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style nlp fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style counts fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style length fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style lda fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style ner fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style analyzed_data fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style analysis fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style ccl fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style stockholm fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style 1st_article fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style finish fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style communication fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+
+
+  newton[Newton Media API: <br> full media articles and content count] -.-> media([News media output])
+  disinfo[EUvsDisinfo: <br> verified disinformation scrape] -.-> media
+  twitter[Twitter API] -.-> soc_media([Journalistic actors on social media])
+  fb_ads[Facebook Ads API: <br> Paid advertising] -.-> soc_media
+  crowdtangle[Crowdtangle API: <br> FB & Instagram public posts] -.-> soc_media
+  media ----> raw_data[(RAW DATA)]
+  soc_media ---> raw_data
+  visual_data[Visual data: <br> web scraping and Selenium] -.-> complementary([Contextual data])
+  gdelt[GDELT API] -.-> complementary
+  wiki_gtrends[Wikipedia Views & Google Trends: <br> Salience of migration] -.-> complementary
+  complementary --> raw_data
+  raw_data ===> regex([Regex preprocessing])
+  regex ==> udpipe([UDPIPE preprocessing])
+  udpipe ===> clean_data[(PROCESSED DATA)]
+  
+  clean_data ====> analysis([Data Analysis])
+  analysis --> eda([Exploratory Data Analysis])
+  analysis --> nlp([NATURAL LANGUAGE PROCESSING])
+  analysis --> complementary_analyses([Complementary analyses])
+  eda --> counts[Counts over time]
+  eda --> length[Average content lenght]
+  complementary_analyses --> network[Network analysis]
+  complementary_analyses --> vision[Object detection]
+  nlp --> sentiment[Sentiment analysis]
+  nlp --> semantic[Semantic analysis]
+  nlp --> ner[Named Entity Recognition]
+  nlp --> lda[LDA topic modeling]
+  analysis ====> analyzed_data[(ANALYZED DATA)]
+  analyzed_data ====> communication{PUBLISHING & OUTREACH}
+  ccl[Vienna University <br> Computational Communication Lab <br> presentation <br> June 2022] --> communication
+  stockholm[Stockholm University <br> Powers of Language <br> conference presentation <br> June 2022] --> communication
+  1st_article[First article draft <br> summer 2022] --> communication
+  communication ====> finish((PROJECT COMPLETION))
+
+```
+

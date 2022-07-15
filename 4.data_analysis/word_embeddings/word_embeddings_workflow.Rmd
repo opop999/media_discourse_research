@@ -31,7 +31,7 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # Import media labels
-media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
 
 ```
 
@@ -41,7 +41,7 @@ the embedding model
 media_types <- c("mainstream", "antisystem")
 periods_full <- c("2015-(10|11|12)", "2022-(02|03|04)")
 periods_name <- c("2015", "2022")
-udpipe_files_path <- "../2.data_transformations/media_articles/data/udpipe_processed/chunks/"
+udpipe_files_path <- "../../2.data_transformations/media_articles/data/udpipe_processed/chunks/"
 upos_filter <- c("VERB", "NOUN", "ADJ", "PROPN")
 
 for (o in seq_along(periods_name)) {
@@ -63,7 +63,7 @@ for (o in seq_along(periods_name)) {
       ungroup() %>% 
       pull(text) %>% 
       paste(collapse = "") %>% 
-      writeLines(paste0("word_embedding/data/corpora/", i, "_", periods_name[o],".txt"))
+      writeLines(paste0("data/corpora/", i, "_", periods_name[o],".txt"))
     
     print(paste("Period", periods_name[o], "and media type", i, "finished"))
   }
@@ -75,14 +75,14 @@ for (o in seq_along(periods_name)) {
 ```{r}
 
 # Train the models using Wang2Vec's library written in C
-corpora_list <- list.files(path = "word_embedding/data/corpora",
+corpora_list <- list.files(path = "data/corpora",
                            pattern = "*.txt",
                            full.names = FALSE)
 
 lapply(corpora_list, function(element) {
   system(
     paste0(
-      "word_embedding/data/wang2vec_libs/word2vec -train word_embedding/data/corpora/",
+      "data/wang2vec_libs/word2vec -train data/corpora/",
       element,
       " -output word_embedding/data/models/",
       gsub(element, pattern = "\\.\\w+", replacement = ""),
@@ -104,7 +104,7 @@ number_of_predictions <- 30L
 
 for (i in models) {
   set.seed(3859)
-  model <- read.word2vec(file = paste0("word_embedding/data/models/", i), normalize = TRUE)
+  model <- read.word2vec(file = paste0("data/models/", i), normalize = TRUE)
   list_of_predictions[[i]] <- predict(model, node_words, type = "nearest", top_n = number_of_predictions) %>% bind_rows()
   }
 
@@ -145,7 +145,7 @@ labs(title = "Similarly used Words in the Czech News Media Migration Coverage (O
                                     size = 0.5),
         plot.margin = margin(7, 30, 5, 5, "pt"))
 
-ggsave("../5.write_up/presentation_CCL_march_2022/graphics/embedding_2015.png", device = "png",
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/embedding_2015.png", device = "png",
        width = 1920, height = 1080, units = "px")
 
 
@@ -179,7 +179,7 @@ labs(title = "Similarly used Words in the Czech News Media Migration Coverage (F
                                     size = 0.5),
         plot.margin = margin(7, 30, 5, 5, "pt"))
 
-ggsave("../5.write_up/presentation_CCL_march_2022/graphics/embedding_2022.png", device = "png",
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/embedding_2022.png", device = "png",
        width = 1920, height = 1080, units = "px")
 
 ```

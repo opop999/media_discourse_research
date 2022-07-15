@@ -31,7 +31,7 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # Import media labels
-media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
 
 ```
 
@@ -39,13 +39,13 @@ media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels
 # X Word frequencies using text from Regex processed dataset
 ## X.1 Process data
 ```{r}
-regex_files_path <- "../2.data_transformations/media_articles/data/regex_processed/chunks/"
-annotated_df_path <- "../1.data_sources/media_articles/data/annotations/chunks/"
+regex_files_path <- "../../2.data_transformations/media_articles/data/regex_processed/chunks/"
+annotated_df_path <- "../../1.data_sources/media_articles/data/annotations/chunks/"
 regex_pattern <- "(běženec\\S*)|(běženk\\S*)|(imigrant\\S*)|(migra\\S*)|(imigra\\S*)|(přistěhoval\\S*)|(uprchl\\S*)|(utečen\\S*)|(azylant\\S*)"
 
 # Load stop words
-stop_words_cs <- c(fromJSON("../2.data_transformations/media_articles/data/irene_stopwords.json"),
-                   fromJSON("../2.data_transformations/media_articles/data/stopwords_cs.json")) %>%
+stop_words_cs <- c(fromJSON("../../2.data_transformations/media_articles/data/irene_stopwords.json"),
+                   fromJSON("../../2.data_transformations/media_articles/data/stopwords_cs.json")) %>%
                    unique()
 
 # Get info on doc_id and date of publication
@@ -56,7 +56,7 @@ doc_id_by_date <- list.files(path = annotated_df_path,
   transmute(date = as.Date(datePublished),
             doc_id = code)
 
-saveRDS(doc_id_by_date, "frequencies/data/doc_id_by_date.rds")
+saveRDS(doc_id_by_date, "data/doc_id_by_date.rds")
 
 
 # Load regex-processed dataset of full texts
@@ -72,7 +72,7 @@ period_dataset <-
 period_dataset[, text := str_extract_all(text, pattern = regex_pattern)][, text := map_chr(text, ~ str_c(.x, collapse=" "))]
 period_dataset <- distinct(period_dataset)
 
-saveRDS(period_dataset, "frequencies/data/key_words_per_doc.rds")
+saveRDS(period_dataset, "data/key_words_per_doc.rds")
 
 # Process corpus to create a DFM
 period_corpus <- corpus(period_dataset,
@@ -104,7 +104,7 @@ period_dfm <- period_corpus_tokenized %>%
 rm(period_corpus_tokenized)
 gc()
 
-saveRDS(period_dfm, "frequencies/data/all_media_dfm.rds")
+saveRDS(period_dfm, "data/all_media_dfm.rds")
 
 # Which of our searched words were the most common
 most_common_terms <- colSums(period_dfm) %>%
@@ -116,7 +116,7 @@ most_common_terms <- colSums(period_dfm) %>%
 ```{r}
 # A workaround to have lemmatized word frequencies, before we use the full
 # UDPIPE data 2015-present
-source("../2.data_transformations/media_articles/udpipe_api_process.R")
+source("../../2.data_transformations/media_articles/udpipe_api_process.R")
 
 lemmatized_migration_terms <-
   udpipe_process(
@@ -130,20 +130,20 @@ lemmatized_migration_terms <-
             total_count = as.integer(doc_id)) %>% 
  filter(nchar(token) > 1)
 
-saveRDS(lemmatized_migration_terms, "frequencies/data/lemmatized_migration_terms.rds")
+saveRDS(lemmatized_migration_terms, "data/lemmatized_migration_terms.rds")
 
 ```
 
 ```{r}
-terms_lemma <- readRDS("frequencies/data/lemmatized_migration_terms.rds")
-doc_id_by_date <- readRDS("frequencies/data/doc_id_by_date.rds")
+terms_lemma <- readRDS("data/lemmatized_migration_terms.rds")
+doc_id_by_date <- readRDS("data/doc_id_by_date.rds")
 filtered_terms <- terms_lemma[terms_lemma$total_count > 100 & terms_lemma$upos %in% c("NOUN", "VERB"), "token"]
 
 # Graph zoom date end & beginning
 start_date <- as.Date("2015-01-01")
 end_date <- as.Date("2022-04-30")
 
-period_frequency_df <- readRDS("frequencies/data/all_media_dfm.rds") %>%
+period_frequency_df <- readRDS("data/all_media_dfm.rds") %>%
   as_tibble(rownames = "doc_id") %>%
   select(doc_id, all_of(filtered_terms)) %>%
   inner_join(doc_id_by_date, by = "doc_id") %>%
@@ -317,7 +317,7 @@ ggplot(frequency_summary_mainstream, aes(x = date, y = monthly_count/1000, color
   limits = c(0, max(frequency_summary_mainstream$monthly_count/1000) + 10)
   )
 
-ggsave("../5.write_up/presentation_CCL_march_2022/graphics/frequencies_terms_mainstream.png", device = "png",
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/frequencies_terms_mainstream.png", device = "png",
        width = 1920, height = 1080, units = "px")
 
 # Alternative
@@ -363,7 +363,7 @@ ggplot(frequency_summary_alt, aes(x = date, y = monthly_count/1000, color = lemm
   limits = c(0, max(frequency_summary_alt$monthly_count/1000) + 10)
   )
 
-ggsave("../5.write_up/presentation_CCL_march_2022/graphics/frequencies_terms_alternative.png", device = "png",
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/frequencies_terms_alternative.png", device = "png",
        width = 1920, height = 1080, units = "px")
 
 ```

@@ -32,29 +32,20 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # Import media labels
-media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
 
 ```
-
 
 ## Using RStudio jobs to parallelize 
 ```{r}
 # Set up parameters for this job
-ner_period <- "2022"
+ner_period <- "*"
 ner_exclude <- FALSE
-
-setwd("named_entity_recognition")
 
 # Identify dataset chunks of interest
 all_chunks_path_ner <- list.files(path = file.path("../../2.data_transformations", "media_articles", "data", "regex_processed", "chunks"),
                               pattern = "*.rds",
                               full.names = TRUE) %>%
-                              .[grep(pattern = ner_period, ., invert = ner_exclude)] %>%
-                              sort()
-
-all_chunks_name_ner <- list.files(path = file.path("../../2.data_transformations", "media_articles", "data", "regex_processed", "chunks"),
-                              pattern = "*.rds",
-                              full.names = FALSE) %>%
                               .[grep(pattern = ner_period, ., invert = ner_exclude)] %>%
                               sort()
 
@@ -72,7 +63,7 @@ period_exclude <- FALSE
 entity_types <- c("P", "io", "ic", "if", "gc", "gr", "gt", "gu")
 
 # Read the NER-processed chunks back in
-ner_df <- list.files(path = "named_entity_recognition/data/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+ner_df <- list.files(path = "data/chunks/", pattern = "*.rds", full.names = TRUE) %>%
   .[grep(pattern = ner_period, ., invert = period_exclude)] %>%
   map_dfr(readRDS) %>%
   filter(ent_type %in% entity_types) %>% # Select entity of interest: https://ufal.mff.cuni.cz/~strakova/cnec2.0/ne-type-hierarchy.pdf
@@ -101,7 +92,7 @@ ner_summary_2015 <-  ner_df_2015 %>%
   mutate(n_scaled = (n - min(n)) / (max(n) - min(n))) %>% # scale variables to get values between 0,1
   arrange(media_type)
 
-saveRDS(ner_summary_2015, "named_entity_recognition/data/ner_summary_2015.rds")
+saveRDS(ner_summary_2015, "data/ner_summary_2015.rds")
 
 # Create a summary of the most common entities
 ner_summary_2022 <-  ner_df_2022 %>%
@@ -116,14 +107,14 @@ ner_summary_2022 <-  ner_df_2022 %>%
   mutate(n_scaled = (n - min(n)) / (max(n) - min(n))) %>% # scale variables to get values between 0,1
   arrange(media_type)
 
-saveRDS(ner_summary_2022, "named_entity_recognition/data/ner_summary_2022.rds")
+saveRDS(ner_summary_2022, "data/ner_summary_2022.rds")
 
 ```
 
 NER Visualizations
 ```{r}
-ner_summary_2022 <- readRDS("named_entity_recognition/data/ner_summary_2022.rds") %>% group_by(media_type) %>% slice_max(n_scaled, n = 50) %>% ungroup()
-ner_summary_2015 <- readRDS("named_entity_recognition/data/ner_summary_2015.rds") %>% group_by(media_type) %>% slice_max(n_scaled, n = 50) %>% ungroup()
+ner_summary_2022 <- readRDS("data/ner_summary_2022.rds") %>% group_by(media_type) %>% slice_max(n_scaled, n = 50) %>% ungroup()
+ner_summary_2015 <- readRDS("data/ner_summary_2015.rds") %>% group_by(media_type) %>% slice_max(n_scaled, n = 50) %>% ungroup()
 
 # Entities for 2015 period
 set.seed(3859)
@@ -150,7 +141,7 @@ ggplot(ner_summary_2015, aes(label = ent_text_stemmed, size = n_scaled, color = 
                                     size = 0.5),
         plot.margin = margin(7, 30, 5, 5, "pt"))
 
-ggsave("../5.write_up/presentation_CCL_march_2022/graphics/ner_2015.png", device = "png",
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/ner_2015.png", device = "png",
        width = 1920, height = 1080, units = "px")
 
 # Entities for 2022 period
@@ -178,6 +169,6 @@ ggplot(ner_summary_2022, aes(label = ent_text_stemmed, size = n_scaled, color = 
                                     size = 0.5),
         plot.margin = margin(7, 30, 5, 5, "pt"))
 
-ggsave("../5.write_up/presentation_CCL_march_2022/graphics/ner_2022.png", device = "png",
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/ner_2022.png", device = "png",
        width = 1920, height = 1080, units = "px")
 ```
