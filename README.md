@@ -137,9 +137,10 @@ graph TD;
   style 1st_article fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style finish fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style communication fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
-
+  style labels fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
 
   newton[Newton Media API: <br> full media articles and content count] -.-> media([News media output])
+  labels[Media type labelled dataset <br> Vaclav Cvrcek et al.] -.-> media
   disinfo[EUvsDisinfo: <br> verified disinformation scrape] -.-> media
   twitter[Twitter API] -.-> soc_media([Journalistic actors on social media])
   fb_ads[Facebook Ads API: <br> Paid advertising] -.-> soc_media
@@ -153,10 +154,9 @@ graph TD;
   raw_data ===> regex([Regex preprocessing])
   regex ==> udpipe([UDPIPE preprocessing])
   udpipe ===> clean_data[(PROCESSED DATA)]
-  
   clean_data ====> analysis([Data Analysis])
   analysis --> eda([Exploratory Data Analysis])
-  analysis --> nlp([NATURAL LANGUAGE PROCESSING])
+  analysis --> nlp([Natural Language Processing])
   analysis --> complementary_analyses([Complementary analyses])
   eda --> counts[Counts over time]
   eda --> length[Average content lenght]
