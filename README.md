@@ -146,42 +146,58 @@ graph TD;
   style trees fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style kw fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style fact_check fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style ws_graphs fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style med_owners fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style parl_speeches fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style ola fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style med_demograph fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style idioms fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style yt fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style google fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
 
-  newton[Newton Media API: <br> full media articles and content count] -.-> media([News media output])
-  labels[Media type labelled dataset <br> Vaclav Cvrcek et al.] -.-> media
-  disinfo[EUvsDisinfo: <br> verified disinformation scrape] -.-> media
-  twitter[Twitter API] -.-> soc_media([Journalistic actors on social media])
-  fb_ads[Facebook Ads API: <br> Paid advertising] -.-> soc_media
-  crowdtangle[Crowdtangle API: <br> FB & Instagram public posts] -.-> soc_media
+  newton[Newton Media API: <br> full media articles and content count] --> media([News media output])
+  labels[Media type labelled dataset: <br> Vaclav Cvrcek et al.] ---> media
+  disinfo[EUvsDisinfo verified migration disinformation: <br> newsplease scrape] --> media
+  twitter[Tweets & Account info: <br> Twitter API] --> soc_media([Migration communication of <br> journalistic actors on social media])
+  yt[YouTube channels data: <br> YouTube API] --> soc_media
+  crowdtangle[FB & Instagram public posts: <br> Crowdtangle API] --> soc_media
   media ----> raw_data[(RAW DATA)]
   soc_media ---> raw_data
-  visual_data[Visual data: <br> web scraping and Selenium] -.-> complementary([Contextual data])
-  gdelt[Global Database of Events, Language and Tone <br> GDELT API] -.-> complementary
-  fact_check[Fact-checked claims about migration <br> demagog.cz] -.-> complementary
-  wiki_gtrends[Wikipedia Views & Google Trends: <br> Salience of migration] -.-> complementary
+  visual_data[Visual data: <br> web scraping & Selenium] --> complementary([Contextual data])
+  gdelt[Global Database of Events, <br> Language and Tone: <br> GDELT API] --> complementary
+  ola[Online media readership: <br> Netmonitor.cz OLA data] --> complementary
+  fb_ads[Paid FB advertising <br> by Czech media: <br> Facebook Ads Library API] --> complementary
+  google[Paid Google advertising <br> by Czech media: <br> Facebook Ads Library API] --> complementary
+  med_demograph[Online media demographics: <br> Similarweb.com data] --> complementary
+  wiki_gtrends[Salience of migration: <br> pageviews - Wikipedia views <br> gtrends - Google Trends <br> Eurobarometer data] --> complementary
+  med_owners[Czech media ownership: <br> real media owners database <br> Hlidac Statu API] --> complementary
+  fact_check[Migration PolComm 1: <br> fact-checked claims of <br> political actors about migration: <br> demagog.cz API] --> complementary
+  parl_speeches[Migration PolComm 2: <br> speeches about migration <br> in the parliament: <br> Hlidac Statu API] --> complementary
   complementary --> raw_data
-  raw_data ===> regex([Regex preprocessing])
-  regex ==> udpipe([UDPIPE preprocessing])
+  raw_data ===> regex([Text cleaning and preprocessing: <br> Regex pattern])
+  regex ==> udpipe([Lemmatization, UPOS & linguistic features: <br> UDPIPE model])
   udpipe ===> clean_data[(PROCESSED DATA)]
   clean_data ====> analysis([Data Analysis])
   eda([Exploratory Data Analysis]) === analysis
   nlp([Natural Language Processing]) ===== analysis 
   complementary_analyses([Complementary analyses]) === analysis 
-  counts[Counts over time] --> eda
-  length[Average content length] --> eda
-  network[Network analysis] --> complementary_analyses 
-  vision[Object detection] --> complementary_analyses
-  sentiment[Sentiment analysis] --> nlp
-  semantic[Semantic analysis] --> nlp
-  ner[Named Entity Recognition] --> nlp
-  lda[Topic modeling] --> nlp
-  collocs[Collocations] --> nlp
-  concord[KWIC Concordances] --> nlp
-  doc_sim[Document similarity] --> nlp
-  word_sim[Word embeddings] --> nlp
-  freq[Key term frequencies] --> nlp
-  trees[Key sentences dependency trees] --> nlp
-  kw[Key Word extraction] --> nlp
+  counts[Counts over time <br> and media type] --> eda
+  length[Content length over time <br> and media type] --> eda
+  trees[Key sentences dependency trees: Treex] --> eda
+  network[Network analysis of <br> online media <br> YouTube channels <br>: igraph] --> complementary_analyses 
+  vision[Object detection: <br> YOLO model] --> complementary_analyses
+  sentiment[Sentiment analysis: <br> Czech Subjectivity Lexicon & <br> Czert BERT model] --> nlp
+  ws_graphs[Word shift graphs: <br> shifterator] --> nlp
+  semantic[Semantic analysis: UCREL USAS] --> nlp
+  idioms[Idiomatic expressions: custom lexicon] --> nlp
+  ner[Named Entity Recognition: <br> NameTag 2 model] --> nlp
+  lda[Topic modeling <br> genisim LDA unsupervised model <br> seededlda semisupervised model] --> nlp
+  collocs[Collocations: <br> quanteda] --> nlp
+  concord[KWIC Concordances: <br> quanteda] --> nlp
+  doc_sim[Document similarity: <br> doc2vec] --> nlp
+  word_sim[Word embeddings: <br> wang2vec] --> nlp
+  freq[Key term frequencies: <br> custom migration-terms <br> lexicon] --> nlp
+  kw[Key Word extraction: <br> TF-IDF] --> nlp
   analysis =====> analyzed_data[(ANALYZED DATA)]
   analyzed_data ====> communication{PUBLISHING & OUTREACH}
   ccl[Vienna University <br> Computational Communication Lab <br> presentation <br> June 2022] --- communication
