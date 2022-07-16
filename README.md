@@ -188,8 +188,8 @@ graph TD;
   vision[Object detection: <br> YOLO model] --> complementary_analyses
   sentiment[Sentiment analysis: <br> Czech Subjectivity Lexicon & <br> Czert BERT model] --> nlp
   ws_graphs[Word shift graphs: <br> shifterator] --> nlp
-  semantic[Semantic analysis: UCREL USAS] --> nlp
-  idioms[Idiomatic expressions: custom lexicon] --> nlp
+  semantic[Semantic analysis: <br> UCREL USAS] --> nlp
+  idioms[Idiomatic expressions: <br> custom lexicon] --> nlp
   ner[Named Entity Recognition: <br> NameTag 2 model] --> nlp
   lda[Topic modeling <br> genisim LDA unsupervised model <br> seededlda semisupervised model] --> nlp
   collocs[Collocations: <br> quanteda] --> nlp
