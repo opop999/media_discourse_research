@@ -61,3 +61,65 @@ doc_topic_distr = lda_model$fit_transform(x = dtm, n_iter = 1000,
                                           progressbar = TRUE)
 
 lda_model$get_top_words(n = 10, lambda = 0.4)
+
+
+#####
+#####
+library(text2map)
+library(stringr)
+# library(tm)
+library(data.table)
+library(dtplyr)
+library(dplyr, warn.conflicts = FALSE)
+# library(topicmodels)
+
+
+upos_filter <- c("NOUN", "PROPN")
+
+test <- lazy_dt(test)
+
+test <- test %>%
+  filter(upos %in% upos_filter) %>%
+  mutate(word = tolower(str_replace_na(lemma, replacement = ""))) %>%
+  group_by(doc_id) %>%
+  summarize(text = str_squish(str_c(word, collapse = " "))) %>%
+  ungroup() %>%
+  as_tibble()
+
+
+dtm_udpipe <- dtm_builder(data = test, text = "text", doc_id = "doc_id")
+dtm_stats(dtm_udpipe)
+
+dtm_less_sparse <- dtm_stopper(dtm_udpipe,
+                               stop_termfreq = c(2, Inf),
+                               stop_docfreq = c(10, Inf))
+dtm_stats(dtm_less_sparse)
+
+
+# test_lda <- LDA(dtm_less_sparse, k = 10, control = list(seed = 3859))
+
+# Calculation of metrics for k topics
+library(ldatuning)
+
+result <- FindTopicsNumber(dtm_less_sparse,
+                           mc.cores = parallel::detectCores() - 1)
+FindTopicsNumber_plot(result)
+
+
+library(text2vec)
+
+set.seed(3859L)
+lda_model <- LDA$new(
+  n_topics = 10
+)
+
+doc_topic_distr <-
+  lda_model$fit_transform(
+    x = dtm_less_sparse,
+    n_iter = 1000,
+    convergence_tol = 0.001,
+    n_check_convergence = 10
+  )
+
+library(LDAvis)
+lda_model$plot()
