@@ -129,7 +129,7 @@ graph TD;
   style counts fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style length fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style lda fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
-  style ner fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style ner fill:#03fc9d,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style analyzed_data fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style analysis fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style ccl fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
@@ -138,11 +138,11 @@ graph TD;
   style finish fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style communication fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style labels fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
-  style collocs fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style collocs fill:#03fc9d,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style concord fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style doc_sim fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style word_sim fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
-  style freq fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
+  style freq fill:#03fc9d,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style trees fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style kw fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
   style fact_check fill:#2b9bf4,color:#fff,stroke:#ed1c24,stroke-width:1.5px
