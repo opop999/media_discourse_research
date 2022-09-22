@@ -1,13 +1,20 @@
 # Czech media migration discourse research
-## Repository of scripts, workflow and output.
+## Repository of scripts, workflow and output
 
-*Overview last updated: 14 July 2022*
+***
+### Authors:
+
+*Ondrej Pekacek, Charles University* <br>
+*Irene Elmerot, Stockholm University*
 
 ***
 
 > NOTE: Some data could not be stored in this repository, due to their proprietary nature. This primarily affects media data obtained from Newton Media API.
 
 ***
+
+*Overview last updated: 14 July 2022*
+
 
 ## **Structure:**
 
