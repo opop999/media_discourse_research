@@ -1,4 +1,4 @@
-# Czech media migration discourse research
+# Czech Media Migration Discourse Research, 2015-2022
 ## Repository of scripts, workflow and output
 
 ***
