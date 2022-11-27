@@ -79,35 +79,31 @@ saveRDS(table_of_czech_disinfo, "data/czech_migration_disinfo.rds")
 
 # Scrape the original disinformation articles using NewsPlease library in Python
 
-```{python}
-from newsplease import NewsPlease
-from newspaper import ArticleException
-import pandas as pd
-```
-
 # Define Python's function
 ```{python}
-def get_disinfo_article_texts(disinfo_urls):
+import pandas as pd
+from newsplease import NewsPlease
+from newspaper import ArticleException
+
+def get_disinfo_article_texts(disinfo_urls: list) -> pd.DataFrame:
     """[Extract article texts from disinfo url links]
     Args:
         disinfo_urls ([list]): [description]
     Returns:
         [DataFrame]: [description]
     """
-    list_of_dictionaries = []
-    for i in range(len(disinfo_urls)):
+    list_of_dictionaries: list = []
+    for i, url in enumerate(disinfo_urls):
         try:
-            article = NewsPlease.from_url(disinfo_urls[i], timeout=15)
+            article = NewsPlease.from_url(url, timeout=15)
         except ArticleException:
             print(f"Error, article nr. {i} not downloaded")
         else:
-            dict_temp = {}
-            dict_temp.update({"title": article.title,
-                              "annotation": article.description,
-                              "full_text": article.maintext,
-                              "extra_text": article.text})
+            dict_temp = {"title": article.title, "annotation": article.description,
+                         "full_text": article.maintext, "extra_text": article.text}
             list_of_dictionaries.append(dict_temp)
-            print(f"Article {i + 1} out of {len(disinfo_urls)} finished scraping", flush=True)
+            print(
+                f"Article {i + 1} out of {len(disinfo_urls)} finished scraping", flush=True)
     print("Extraction Finished", flush=True)
     return pd.DataFrame(list_of_dictionaries)
 
