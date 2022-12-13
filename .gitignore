@@ -50,6 +50,8 @@ docs/fb_cookies_1.json
 4.data_analysis/sentiment_analysis/data/chunks/*.json
 1.data_sources/twitter/data/*.rds
 1.data_sources/twitter/data/*.feather
+1.data_sources/facebook/facebook_ads/data/*
+
 
 # Large models
 4.data_analysis/word_embeddings/data/models

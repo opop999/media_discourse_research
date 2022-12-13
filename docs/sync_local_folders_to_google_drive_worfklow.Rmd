@@ -22,6 +22,10 @@ Example usage
 ```{r}
 list_of_folders_to_synchronize <-
   list(
+    facebook_ads = c(
+      local_folder_path = "../1.data_sources/facebook/facebook_ads/data/",
+      remote_folder_path = "media_research/datasets/1.extracted_data/facebook/ads/"
+    ),
     media_articles_full = c(
       local_folder_path = "../1.data_sources/media_articles/data/full/chunks/",
       remote_folder_path = "media_research/datasets/1.extracted_data/media/full/chunks/"
@@ -49,7 +53,7 @@ list_of_folders_to_synchronize <-
     media_articles_analyzed_sentiment = c(
       local_folder_path = "../4.data_analysis/sentiment_analysis/data/chunks/",
       remote_folder_path = "media_research/datasets/4.analyzed_data/media/sentiment/chunks/"
-    )
+    ),
   )
 
 synchronize_selected_folders(list_of_folders = list_of_folders_to_synchronize)
