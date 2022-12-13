@@ -53,7 +53,7 @@ list_of_folders_to_synchronize <-
     media_articles_analyzed_sentiment = c(
       local_folder_path = "../4.data_analysis/sentiment_analysis/data/chunks/",
       remote_folder_path = "media_research/datasets/4.analyzed_data/media/sentiment/chunks/"
-    ),
+    )
   )
 
 synchronize_selected_folders(list_of_folders = list_of_folders_to_synchronize)
