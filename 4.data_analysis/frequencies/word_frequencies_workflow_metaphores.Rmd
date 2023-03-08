@@ -1,0 +1,255 @@
+---
+title: "Word frequencies: migration metaphores"
+---
+Load necessary packages
+```{r include=FALSE}
+# Package names
+packages <-
+  c(
+    "dplyr",
+    "stringr",
+    "purrr",
+    "tidyr",
+    "tidytext",
+    "quanteda",
+    "jsonlite",
+    "ggplot2",
+    "data.table",
+    "plotly",
+    "forcats",
+    "ggwordcloud",
+    "ggpubr"
+  )
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# Import media labels
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+
+```
+
+```{r}
+library(parallel)
+
+list_of_processed_chunks <- list.files(path = "../../2.data_transformations/media_articles/data/udpipe_processed/chunks", pattern = "*.rds", full.names = TRUE)
+
+terms <- c("příliv", "proud", "záplava", "vlna")
+
+process_df <- function(chunk_path) {
+  chunk_path %>% 
+        readRDS() %>% 
+        transmute(doc_id, lemma = tolower(lemma)) %>% 
+        filter(lemma %in% terms)
+}
+
+migration_metaphores <- mclapply(list_of_processed_chunks, process_df, mc.cores = detectCores() - 1) %>% 
+  bind_rows()
+
+saveRDS(migration_metaphores, "data/migration_metaphores.rds")
+
+```
+
+
+```{r}
+doc_id_by_date <- readRDS("data/doc_id_by_date.rds")
+
+migration_metaphores <- readRDS("data/migration_metaphores.rds")
+
+# Graph zoom date end & beginning
+start_date <- as.Date("2015-01-01")
+end_date <- as.Date("2022-04-30")
+
+key_dates <- setNames(c(as.Date("2015-05-11"),
+                        as.Date("2015-09-02"),
+                        as.Date("2016-09-21"),
+                        as.Date("2016-11-03"),
+                        as.Date("2018-01-27"),
+                        as.Date("2018-06-10"),
+                        as.Date("2019-01-01"),
+                        as.Date("2020-03-11"),
+                        as.Date("2022-02-24")),
+                      c("EU quota",
+                        "Alan Kurdi",
+                        "Egypt shipwreck",
+                        "Libya shipwreck",
+                        "Milos Zeman re-elected",
+                        "Aquarius rejected",
+                        "Lowest 5yr arrivals",
+                        "Pandemic start",
+                        "Invasion of Ukraine"))
+
+frequency_summary_all <- migration_metaphores %>% 
+  inner_join(doc_id_by_date, by = "doc_id") %>%
+  mutate(date = as.Date(cut(date, "months"))) %>% 
+  filter(date < as.Date("2022-05-01")) %>% 
+  count(date, lemma, name = "monthly_count")
+
+frequency_summary_mainstream <- migration_metaphores %>% 
+  inner_join(media_labels, by = "doc_id") %>% 
+  filter(media_type %in% c("mainstream")) %>% 
+  inner_join(doc_id_by_date, by = "doc_id") %>%
+  mutate(date = as.Date(cut(date, "months"))) %>% 
+  filter(date < as.Date("2022-05-01")) %>% 
+  count(date, lemma, name = "monthly_count")
+
+frequency_summary_alt <- migration_metaphores %>% 
+  inner_join(media_labels, by = "doc_id") %>% 
+  filter(media_type %in% c("antisystem", "political_tabloid")) %>% 
+  inner_join(doc_id_by_date, by = "doc_id") %>%
+  mutate(date = as.Date(cut(date, "months"))) %>% 
+  filter(date < as.Date("2022-05-01")) %>% 
+  count(date, lemma, name = "monthly_count")
+
+
+```
+
+```{r}
+ggplot(frequency_summary_all, aes(x = date, y = monthly_count, color = lemma)) +
+  geom_line() +
+  geom_point(size = 0.3) +
+  geom_vline(xintercept = c(as.numeric(key_dates[1:length(key_dates)])), color = "#563a3a", linetype = 2, size = 0.2) +
+  geom_text(aes(x = key_dates[1], y = 0, label = names(key_dates)[1]), color = "#22209F", vjust = -22, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[2], y = 0, label = names(key_dates)[2]), color = "#22209F", vjust = -40, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[3], y = 0, label = names(key_dates)[3]), color = "#22209F", vjust = -20, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[4], y = 0, label = names(key_dates)[4]), color = "#22209F", vjust = -26, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[5], y = 0, label = names(key_dates)[5]), color = "#22209F", vjust = -21, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[6], y = 0, label = names(key_dates)[6]), color = "#22209F", vjust = -26, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[7], y = 0, label = names(key_dates)[7]), color = "#22209F", vjust = -15, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[8], y = 0, label = names(key_dates)[8]), color = "#22209F", vjust = -12, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[9], y = 0, label = names(key_dates)[9]), color = "#22209F", vjust = -52, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  ylab("Term occurences") +
+  xlab(element_blank()) +
+  labs(title = "Czech Media & Migration Metaphores",
+       subtitle = "Total monthly occurences of selected lemma, 2015-2022",
+       caption = "Data: Newton Media Archive") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_text(size = 7),
+        plot.background = element_rect(fill = "grey90"),
+        plot.title = element_text(face = "bold", size = 10),
+        plot.subtitle = element_text(face = "italic", size = 8),
+        plot.caption = element_text(size = 5),
+        axis.title.y = element_text(size = 8),
+        legend.title = element_blank(),
+        legend.key = element_rect(fill = NA, size = 8),
+        legend.text = element_text(size = 9),
+        legend.background = element_rect(fill = NA),
+        legend.position = c(0.8, 0.8),
+        plot.margin = margin(7,30,3,5, "pt")) +
+  scale_x_date(date_breaks = "6 months", date_labels = "%m-%y") +
+  coord_cartesian(xlim = c(start_date, end_date + 120), expand = FALSE) +
+  scale_y_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 100000, 1000),
+  labels = seq(0, 100000, 1000),
+  limits = c(0, max(frequency_summary_all$monthly_count) + 1000)
+  )
+
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/metaphores_all.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+```
+
+
+```{r}
+ggplot(frequency_summary_mainstream, aes(x = date, y = monthly_count, color = lemma)) +
+  geom_line() +
+  geom_point(size = 0.3) +
+  geom_vline(xintercept = c(as.numeric(key_dates[1:length(key_dates)])), color = "#563a3a", linetype = 2, size = 0.2) +
+  geom_text(aes(x = key_dates[1], y = 0, label = names(key_dates)[1]), color = "#22209F", vjust = -22, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[2], y = 0, label = names(key_dates)[2]), color = "#22209F", vjust = -40, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[3], y = 0, label = names(key_dates)[3]), color = "#22209F", vjust = -20, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[4], y = 0, label = names(key_dates)[4]), color = "#22209F", vjust = -26, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[5], y = 0, label = names(key_dates)[5]), color = "#22209F", vjust = -21, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[6], y = 0, label = names(key_dates)[6]), color = "#22209F", vjust = -26, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[7], y = 0, label = names(key_dates)[7]), color = "#22209F", vjust = -15, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[8], y = 0, label = names(key_dates)[8]), color = "#22209F", vjust = -12, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[9], y = 0, label = names(key_dates)[9]), color = "#22209F", vjust = -52, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  ylab("Term occurences") +
+  xlab(element_blank()) +
+  labs(title = "Czech Mainstream Media & Migration Metaphores",
+       subtitle = "Total monthly occurences of selected lemma in mainstream media, 2015-2022",
+       caption = "Data: Newton Media Archive, Vaclav Cvrcek & Jan Henys (2022)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_text(size = 7),
+        plot.background = element_rect(fill = "grey90"),
+        plot.title = element_text(face = "bold", size = 10),
+        plot.subtitle = element_text(face = "italic", size = 8),
+        plot.caption = element_text(size = 5),
+        axis.title.y = element_text(size = 8),
+        legend.title = element_blank(),
+        legend.key = element_rect(fill = NA, size = 8),
+        legend.text = element_text(size = 9),
+        legend.background = element_rect(fill = NA),
+        legend.position = c(0.8, 0.8),
+        plot.margin = margin(7,30,3,5, "pt")) +
+  scale_x_date(date_breaks = "6 months", date_labels = "%m-%y") +
+  coord_cartesian(xlim = c(start_date, end_date + 120), expand = FALSE) +
+  scale_y_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 100000, 500),
+  labels = seq(0, 100000, 500),
+  limits = c(0, max(frequency_summary_mainstream$monthly_count) + 500)
+  )
+
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/metaphores_mainstream.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+```
+
+```{r}
+ggplot(frequency_summary_alt, aes(x = date, y = monthly_count, color = lemma)) +
+  geom_line() +
+  geom_point(size = 0.3) +
+  geom_vline(xintercept = c(as.numeric(key_dates[1:length(key_dates)])), color = "#563a3a", linetype = 2, size = 0.2) +
+  geom_text(aes(x = key_dates[1], y = 0, label = names(key_dates)[1]), color = "#22209F", vjust = -22, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[2], y = 0, label = names(key_dates)[2]), color = "#22209F", vjust = -40, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[3], y = 0, label = names(key_dates)[3]), color = "#22209F", vjust = -20, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[4], y = 0, label = names(key_dates)[4]), color = "#22209F", vjust = -26, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[5], y = 0, label = names(key_dates)[5]), color = "#22209F", vjust = -21, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[6], y = 0, label = names(key_dates)[6]), color = "#22209F", vjust = -26, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[7], y = 0, label = names(key_dates)[7]), color = "#22209F", vjust = -15, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[8], y = 0, label = names(key_dates)[8]), color = "#22209F", vjust = -12, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[9], y = 0, label = names(key_dates)[9]), color = "#22209F", vjust = -52, size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  ylab("Term occurences") +
+  xlab(element_blank()) +
+  labs(title = "Czech Alternative Media & Migration Metaphores",
+       subtitle = "Total monthly occurences of selected lemma in alternative media, 2015-2022",
+       caption = "Data: Newton Media Archive, Vaclav Cvrcek & Jan Henys (2022)") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_text(size = 7),
+        plot.background = element_rect(fill = "grey90"),
+        plot.title = element_text(face = "bold", size = 10),
+        plot.subtitle = element_text(face = "italic", size = 8),
+        plot.caption = element_text(size = 5),
+        axis.title.y = element_text(size = 8),
+        legend.title = element_blank(),
+        legend.key = element_rect(fill = NA, size = 8),
+        legend.text = element_text(size = 9),
+        legend.background = element_rect(fill = NA),
+        legend.position = c(0.8, 0.8),
+        plot.margin = margin(7,30,3,5, "pt")) +
+  scale_x_date(date_breaks = "6 months", date_labels = "%m-%y") +
+  coord_cartesian(xlim = c(start_date, end_date + 120), expand = FALSE) +
+  scale_y_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 100000, 100),
+  labels = seq(0, 100000, 100),
+  limits = c(0, max(frequency_summary_alt$monthly_count) + 100)
+  )
+
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/metaphores_alternative.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+```
+
+
+```{r}
+# Graphs with lemma categories related to migration by media type
+

@@ -1,5 +1,5 @@
 ---
-title: "Word frequencies"
+title: "Word frequencies: refugee and migration terms"
 ---
 Load necessary packages
 ```{r include=FALSE}
