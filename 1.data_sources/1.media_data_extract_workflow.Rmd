@@ -22,7 +22,7 @@
 # Source the respective function
 source("media_articles/get_all_annotated_articles.R")
 
-date_seq <- seq(as.Date("2015-01-01T00:00:00"), as.Date("2022-05-24T23:59:59"), by = "4 days")
+date_seq <- seq(as.Date("2022-05-01T00:00:00"), as.Date("2023-03-01T23:59:59"), by = "4 days")
 
 list_of_dfs <- vector(mode = "list", length = length(date_seq) - 1)
 
@@ -79,7 +79,7 @@ Integrity tests
 # Integrity tests
 # Which days, if any, are missing/have 0 results?
 as.Date(setdiff(as.character(seq(as.Date("2015-01-01T00:00:00"),
-                                 as.Date("2022-05-24T23:59:59"), by = "1 day")),
+                                 as.Date("2023-03-01T23:59:59"), by = "1 day")),
                 as.character(as.Date(unique(annotated_df$datePublished)))))
 
 ## Check if min articles per day is more than cca 45
@@ -226,7 +226,7 @@ saveRDS(media_count_df_by_period, "media_articles/data/counts/media_count_df_by_
 # Source the respective function
 source("media_articles/get_full_articles.R")
 
-date_seq <- seq(as.Date("2015-01-01"), as.Date("2022-05-25"), by = "3 days")
+date_seq <- seq(as.Date("2022-05-01"), as.Date("2023-03-01"), by = "3 days")
 
 # Start time measuring
 start_time <- Sys.time()
