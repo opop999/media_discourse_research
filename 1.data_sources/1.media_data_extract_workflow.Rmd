@@ -269,13 +269,13 @@ Integrity checks: comparing full and annotated datasets
 full_articles_df_cz_sk <- list.files(path = "media_articles/data/full/chunks_cz_sk/", pattern = "*.rds", full.names = TRUE) %>%
   map_dfr(readRDS) %>% 
   mutate(PublishDate = as.Date(PublishDate)) %>% 
-  filter(PublishDate >= as.Date("2022-02-01")) # We can filter by specific date, if we are adding new data
+  filter(PublishDate >= as.Date("2022-05-01")) # We can filter by specific date, if we are adding new data
 
 # Read the annotated dataset of chunks back in
 annotated_df <- list.files(path = "media_articles/data/annotations/chunks/", pattern = "*.rds", full.names = TRUE) %>%
   map_dfr(readRDS) %>% 
   mutate(datePublished = as.Date(datePublished)) %>% 
-  filter(datePublished >= as.Date("2022-02-01"))
+  filter(datePublished >= as.Date("2022-05-01"))
 
 # Read in the dataset with media id information
 media_names_and_ids_clean <- readRDS("media_articles/data/history_id_df_clean.rds")
@@ -383,10 +383,10 @@ Add to the full dataset
 full_articles_df_cz_sk <- list.files(path = "media_articles/data/full/chunks_cz_sk/", pattern = "*.rds", full.names = TRUE) %>%
   map_dfr(readRDS) %>% 
   mutate(PublishDate = as.Date(PublishDate)) %>% 
-  filter(PublishDate >= as.Date("2022-02-01")) 
+  filter(PublishDate >= as.Date("2022-05-01")) 
 
 # Read the additional articles dataset back in
-additional_full_articles_df <- readRDS("media_articles/data/full/additional_full_articles_df.rds")
+additional_full_articles_df <- readRDS("media_articles/data/full/additional_full_articles_df.rds") %>% mutate(PublishDate = as.Date(PublishDate)) 
 
 # Add the newly extracted dataset to the 
 full_articles_df_cz_sk <- bind_rows(full_articles_df_cz_sk, additional_full_articles_df) %>% distinct(Code, .keep_all = TRUE)
@@ -395,10 +395,11 @@ full_articles_df_cz_sk <- bind_rows(full_articles_df_cz_sk, additional_full_arti
 Split complete dataset to CZ and SK 
 ```{r}
 full_articles_cz <- full_articles_df_cz_sk[full_articles_df_cz_sk$Code %in% annotated_df$code, ]
-# full_articles_sk <- full_articles_df_cz_sk[!full_articles_df_cz_sk$Code %in% annotated_df$code,]
+# This would be the code to get only the Slovak articles, since they are not present in the annotated data frame
+# full_articles_sk <- full_articles_df_cz_sk[!full_articles_df_cz_sk$Code %in% annotated_df$code,] 
+# saveRDS(full_articles_sk, "media_articles/data/full_articles_sk.rds", compress = FALSE)
 
 saveRDS(full_articles_cz, "media_articles/data/full_articles_cz.rds", compress = FALSE)
-# saveRDS(full_articles_sk, "media_articles/data/full_articles_sk.rds", compress = FALSE)
 ```
 
 Create chunks of the complete dataset
