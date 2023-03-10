@@ -20,6 +20,7 @@ Use Python to process the full media article chunks with regex, saving all of th
 ```{python}
 import os
 import gc
+from time import time
 from pathlib import Path
 from pyreadr import read_r, write_rds
 from tqdm import tqdm
@@ -62,7 +63,7 @@ for chunk in tqdm(chunks):
     del media_df
     gc.collect()
 print("Regex preprocessing finished")
-print("End in:", time() - start)
+print("End in:", time() - start, "seconds.")
 
 ```
 
@@ -89,8 +90,6 @@ for chunk in tqdm(chunks):
 print("Regex preprocessing finished")
 ```
 
-
-
 Separate large chunks to smaller parts for easier sharing and processing
 
 ```{r}
@@ -114,7 +113,6 @@ for (i in list_of_processed_chunks) {
   }
 }
 
-# purrr::map2(list_of_chunks, paste0("media_articles/data/df_chunks/non_processed/cs_chunk_", names(list_of_chunks), ".rds"), saveRDS)
 ```
 
 Paralellized version (works on Linux)
