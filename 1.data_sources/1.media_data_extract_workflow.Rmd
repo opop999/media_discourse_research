@@ -1,7 +1,7 @@
 0. Load required libraries
 ```{r include=FALSE}
   # Package names
-  packages <- c("dplyr", "stringr", "purrr", "readr", "jsonlite")
+  packages <- c("dplyr", "stringr", "purrr", "readr", "jsonlite", "googlesheets4")
 
   # Install packages not yet installed
   installed_packages <- packages %in% rownames(installed.packages())
@@ -13,7 +13,7 @@
   invisible(lapply(packages, library, character.only = TRUE))
   
   # Last update for media labels dataset from Cvrcek et al.
-  last_update <- "february_2022"
+  last_update <-  "november_2022"
 ```
 
 1. Extracting Short(annotation only) Versions of Media Articles using the following API parameters. 
@@ -421,14 +421,25 @@ full_articles_cz <- list.files(path = "media_articles/data/full/chunks/", patter
 ```
 
 Export informative counts about the total number of migration-related articles per media
+This could help judge the relevancy of each of the outlets within migration discourse.
 ```{r}
 full_articles_cz %>% transmute(media_name = SourceName) %>% count(media_name, sort = TRUE) %>% saveRDS("media_articles/data/newton_migration_articles_by_media.rds")
 ```
 
 6. Get Newton Media's own media type labels: Using website version and JS script
 
+To get this dataset, it is necessary to access the web version of Newton Media Archive.
+On the search page, you need to click on *Rozšířené hledání* (Advanced Search).
+In the next step, you need to click the red button on the right-side from the row *Zdroje* (Sources).
+A pop up window should open, with drop-down selection of different media types. 
+In order to get all of the data, you need to manually click all of the *triangles* on the left side of the media category.
+This triggers an API request and loads all of the items in the subcategory. Continue until you reach the lowest level - names of the individual outlets (which no longer have triangles next to their names).
+Ideally, you want to have the complete list of all of the media outlets with their parent categories for all of the media types (print, tv, radio, interent.)
+Final step: access developer tools console in your browser (Command/Control + Shift + J) and enter the JavaScript code below.
+This scrapes all of the media names and their categories.
+
 ```{js}
-// e.g. console.save({hello: 'world'})
+// First, define function, which enables to save files using the browser console e.g. console.save({hello: 'world'})
 (function (console) {
     console.save = function (data, filename) {
         if (!data) {
@@ -502,24 +513,46 @@ combined_newton_media_types <- newton_media_types$level_3 %>%
                   media_type_newton = data_name.y)
 
 
-saveRDS(combined_newton_media_types, "media_articles/data/media_type_labels/combined_newton_media_types.rds")
+saveRDS(test, "media_articles/data/media_type_labels/combined_newton_media_types.rds")
 
 ```
 
-
-
-
-
 7. Match our cleaned media names with media labels from Vaclav Cvrcek et al. (Work in Progress)
 
-Step 1: Clean the dataset from Cvrcek et al., keeping only fully matching labels between coders
+Step 1: Get the newest coded data 
+```{r}
+# This script programmatically downloads Vaclav Cvrcek et al.
+# work on Czech media types from Google Sheets
+
+url_to_sheet <- Sys.getenv("MEDIA_TYPES_CVRCEK_URL")
+
+# Get info about all individual sheets
+gs4_get(url_to_sheet)
+sheet_properties(url_to_sheet)
+
+sheets <- sheet_names(url_to_sheet)
+
+# We have two sheets of interest from two coders. One is coded by Vaclav Cvrcek, the second by Jan Henys.
+labels_vc <- read_sheet(url_to_sheet, sheet = sheets[grep("VC", sheets, ignore.case = TRUE)], col_types = "ccnccccccccc")
+labels_jh <- read_sheet(url_to_sheet, sheet = sheets[grep("JH", sheets, ignore.case = TRUE)], col_types = "ccnccccccccc")
+
+saveRDS(labels_vc, paste0("media_articles/data/media_type_labels/labels_vc_", last_update, ".rds"))
+saveRDS(labels_jh, paste0("media_articles/data/media_type_labels/labels_jh_", last_update, ".rds"))
+
+```
+
+Step 2: Clean the dataset from Cvrcek et al., keeping only fully matching labels between coders
 ```{r}
 # There are two human coders who assign labels to the media
 process_media_labels_dataset <- function(rds_path) {
 processed_df <-
   readRDS(rds_path) %>%
-  transmute("name" = "web", "name_alt" = "title", "media_type", "media_type_monitora" = "Monitora kategorie") %>% 
-  set_names(c("name", "name_alt", "media_type", "media_type_monitora")) %>%
+  transmute(
+    name = web,
+    name_alt = title,
+    media_type,
+    media_type_monitora = `Monitora kategorie`
+  ) %>% 
   filter(!is.na(media_type) & !is.na(name)) %>%
   mutate(name_alt = if_else(is.na(name_alt), name, name_alt),
          media_type = recode_factor(as.factor(media_type),
@@ -535,18 +568,19 @@ processed_df <-
                                     "Stranické weby" = "party_web",
                                     "Web instituce" = "institution_web"),
          media_type_monitora = recode_factor(as.factor(media_type_monitora),
-                                    "Ekonomika / Finance / Právo" = "econ_fin_law",
-                                    "Potenciálně dezinformační weby" = "disinfo",
-                                    "Regionální zprávy" = "regional",
-                                    "Společenské / Bulvár" = "society_tabloid",
-                                    "Zprávy / Politika" = "news_politics"))
+                                             "Ekonomika / Finance / Právo" = "econ_fin_law",
+                                             "Potenciálně dezinformační weby" = "disinfo",
+                                             "Regionální zprávy" = "regional",
+                                             "Společenské / Bulvár" = "society_tabloid",
+                                             "Zprávy / Politika" = "news_politics"))
 return(processed_df)
 }
 
 # Process media label dataset from both coders
-labels_df_1 <- process_media_labels_dataset(paste0("media_articles/data/media_type_labels/labels_vc_", last_update, ".csv"))
-labels_df_2 <- process_media_labels_dataset(paste0("media_articles/data/media_type_labels/labels_jh_", last_update, ".csv"))
+labels_df_1 <- process_media_labels_dataset(paste0("media_articles/data/media_type_labels/labels_vc_", last_update, ".rds"))
+labels_df_2 <- process_media_labels_dataset(paste0("media_articles/data/media_type_labels/labels_jh_", last_update, ".rds"))
 
+# Match both labelled datasets. Keep only news outlets on which both coders agreed.
 coders_matched_media <-
   inner_join(labels_df_1,
              labels_df_2,
@@ -564,7 +598,7 @@ saveRDS(coders_matched_media, paste0("media_articles/data/media_type_labels/code
 
 ```
 
-Step 2: Add our custom labels for "offline" outlets and other important ones which are not present in the Vaclav Cvrcek et al. dataset
+Step 4: Add our custom labels for "offline" outlets and other important ones which are not present in the Vaclav Cvrcek et al. dataset
 ```{r}
 # We can always format the spaces of the tribble by piping it to %>% datapasta::dpasta()
 # Helps to inform which important media appear in our migration dataset and are not
@@ -677,11 +711,8 @@ vc_and_newton_media_labels  <- left_join(full_articles_cz, joined_labels_df, by 
   left_join(combined_newton_media_types, by = "media_id") %>% 
   select(-name, media)
 
-
-
 saveRDS(all_media_labels_with_doc_id, "media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds") 
 saveRDS(vc_and_newton_media_labels, "media_articles/data/media_type_labels/vc_and_newton_media_labels.rds" )
-
 
 ```
 
