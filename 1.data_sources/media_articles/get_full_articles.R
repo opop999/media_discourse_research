@@ -48,12 +48,17 @@ extract_full_articles <- function(search_string,
   # Add log printing for long extractions
   if (log == TRUE) {
     # Custom function to print console output to a file
-    cat_sink <- function(..., file = paste0(log_path, "get_full_articles_log.txt"), append = TRUE) {
-      cat(..., file = file, append = append)
-    }
-    cat_sink("\n>--------------------<\n\n", as.character(Sys.time()))
+    cat_sink <-
+      function(...,
+               file = paste0(log_path, "get_full_articles_log.txt"),
+               append = TRUE) {
+        cat(..., file = file, append = append)
+      }
+  } else {
+    cat_sink <- cat
   }
 
+  cat_sink("\n>--------------------<\n\n", as.character(Sys.time()))
 
   # 2. Get total number of results ------------------------------------------
   total_results <- httr::POST(

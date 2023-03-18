@@ -35,9 +35,14 @@ extract_full_articles_individual_new_api <- function(article_code,
   # Add log printing for long extractions
   if (log == TRUE) {
     # Custom function to print console output to a file
-    cat_sink <- function(..., file = paste0(log_path, "get_full_articles_individual_new_api_log.txt"), append = TRUE) {
-      cat(..., file = file, append = append)
-    }
+    cat_sink <-
+      function(...,
+               file = paste0(log_path, "get_full_articles_individual_new_api_log.txt"),
+               append = TRUE) {
+        cat(..., file = file, append = append)
+      }
+  } else {
+    cat_sink <- cat
   }
 
   # 3. Extract the article ------------------------------------------

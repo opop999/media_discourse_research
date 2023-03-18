@@ -38,13 +38,22 @@ get_history_id <- function(media_name_vec,
   # Add log printing for long extractions
   if (log == TRUE) {
     # Custom function to print console output to a file
-    cat_sink <- function(..., file = paste0(log_path, "get_history_id_log.txt"), append = TRUE) {
-      cat(..., file = file, append = append)
-    }
-    cat_sink("\n>--------------------<\n\n", as.character(Sys.time()))
+    cat_sink <-
+      function(...,
+               file = paste0(log_path, "get_history_id_log.txt"),
+               append = TRUE) {
+        cat(..., file = file, append = append)
+      }
+  } else {
+    cat_sink <- cat
   }
 
-  cat_sink("\nThe total number of media names & the total amount of API calls:", length(media_name_vec), "\n")
+  cat_sink("\n>--------------------<\n\n", as.character(Sys.time()))
+  cat_sink(
+    "\nThe total number of media names & the total amount of API calls:",
+    length(media_name_vec),
+    "\n"
+  )
 
   # 2. Loop over each media name ------------------------------------------
 

@@ -144,9 +144,12 @@ udpipe_process <- function(article_id,
   # Add log printing for long extractions
   if (log == TRUE) {
     # Custom function to print console output to a file
-    cat_sink <- function(..., file = paste0(log_path, "udpipe_api_process_log.txt"), append = TRUE) {
-      cat(..., file = file, append = append)
-    }
+    cat_sink <-
+      function(...,
+               file = paste0(log_path, "udpipe_api_process_log.txt"),
+               append = TRUE) {
+        cat(..., file = file, append = append)
+      }
   } else {
     cat_sink <- cat
   }

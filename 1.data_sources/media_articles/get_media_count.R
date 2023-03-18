@@ -44,9 +44,12 @@ get_count_per_media <- function(search_string = "*",
   # Add log printing for long extractions
   if (log == TRUE) {
     # Custom function to print console output to a file
-    cat_sink <- function(..., file = paste0(log_path, "get_media_count_log.txt"), append = TRUE) {
-      cat(..., file = file, append = append)
-    }
+    cat_sink <-
+      function(...,
+               file = paste0(log_path, "get_media_count_log.txt"),
+               append = TRUE) {
+        cat(..., file = file, append = append)
+      }
   } else {
     cat_sink <- cat
   }

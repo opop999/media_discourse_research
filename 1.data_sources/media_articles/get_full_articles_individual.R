@@ -42,9 +42,14 @@ extract_full_articles_individual <- function(search_string,
   # Add log printing for long extractions
   if (log == TRUE) {
     # Custom function to print console output to a file
-    cat_sink <- function(..., file = paste0(log_path, "get_full_articles_individual_log.txt"), append = TRUE) {
-      cat(..., file = file, append = append)
-    }
+    cat_sink <-
+      function(...,
+               file = paste0(log_path, "get_full_articles_individual_log.txt"),
+               append = TRUE) {
+        cat(..., file = file, append = append)
+      }
+  } else {
+    cat_sink <- cat
   }
 
   # 3. Loop over pages ------------------------------------------
