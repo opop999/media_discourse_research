@@ -22,9 +22,10 @@ facebook_acc <- "hospodarky"
 # Set min date and max date
 
 # Using the old API endpoint to get raw response
-response <- content(httr::GET(
+response <- content(httr::RETRY(
+  verb = "GET",
   url = paste0("https://graph.facebook.com/v5.0/", facebook_acc, "/posts"),
-  httr::add_headers(
+  config = httr::add_headers(
     Accept = "application/json"
   ),
   query = list(
@@ -32,7 +33,8 @@ response <- content(httr::GET(
     access_token = temporary_token,
     since = min_date,
     until = max_date
-  )), as = "parsed")
+  )
+), as = "parsed")
 
 # Add first 100 records to the list
 posts_list[[1]] <- response[["data"]]
@@ -42,12 +44,13 @@ next_url <- response[["paging"]][["next"]]
 
 
 # Here begins the for loop to get other pages
-response <- content(httr::VERB(
+response <- content(httr::RETRY(
   verb = "GET",
   url = next_url,
-  httr::add_headers(
+  config = httr::add_headers(
     Accept = "application/json"
-  )), as = "parsed")
+  )
+), as = "parsed")
 
 posts_list[[2]] <- response[["data"]]
 
@@ -55,4 +58,3 @@ next_url <- response[["paging"]][["next"]]
 
 
 fb_posts_df <- bind_rows(posts_list)
-

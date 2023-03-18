@@ -6,21 +6,22 @@ library(data.table)
 full_articles_subset <- readRDS("2.data_transformations/data/full_articles_subset.rds")
 full_articles_subset$Content <- gsub(pattern = "  +", replacement = " ", x = gsub(pattern = "<(.|\n)*?>|[^ěščřžýáíéóúůďťňĎŇŤŠČŘŽÝÁÍÉÚŮĚÓa-zA-Z,\\.{1} ]", replacement = " ", x = full_articles_subset$Content))
 
-i = 5
+i <- 5
 
 # NAME ENTITY RECOGNITION
 # Straka, Milan and Straková, Jana, 2014,
 # NameTag, LINDAT/CLARIAH-CZ digital library at the Institute of Formal and Applied Linguistics (ÚFAL), Faculty of Mathematics and Physics, Charles University,
 # http://hdl.handle.net/11858/00-097C-0000-0023-43CE-E.
 
-ner_tsv <- POST(
+ner_tsv <- httr::RETRY(
+  verb = "POST",
   url = "http://lindat.mff.cuni.cz/services/nametag/api/recognize",
   query = list(
     output = "vertical",
     model = "czech-cnec2.0-200831",
     input = "untokenized"
   ),
-  add_headers(
+  config = add_headers(
     Accept = "application/json",
     `Content-Type` = "application/x-www-form-urlencoded",
     Connection = "keep-alive",
@@ -29,7 +30,8 @@ ner_tsv <- POST(
   body = list(
     data = full_articles_subset$Content[[i]]
   ),
-  encode = "form") %>%
+  encode = "form"
+) %>%
   content(as = "text", encoding = "UTF-8") %>%
   fromJSON() %>%
   .[["result"]] %>%
@@ -50,7 +52,8 @@ ner_tsv <- POST(
 
 source("2.data_transformations/conllu_to_df.R")
 # API uses UD models v 2.6, slightly improved to 2.5, which is used locally using Udpipe library (changelog: https://github.com/UniversalDependencies/UD_Czech-PDT/tree/master)
-udpipe_api <- POST(
+udpipe_api <- httr::RETRY(
+  verb = "POST",
   url = "http://lindat.mff.cuni.cz/services/udpipe/api/process",
   query = list(
     model = "czech-pdt-ud-2.6-200830",
@@ -58,16 +61,17 @@ udpipe_api <- POST(
     parser = "",
     tagger = ""
   ),
-  add_headers(
+  config = add_headers(
     Accept = "application/json",
     `Content-Type` = "application/x-www-form-urlencoded",
-     Connection = "keep-alive",
+    Connection = "keep-alive",
     `Accept-Encoding` = "gzip, deflate, br"
   ),
   body = list(
     data = processed_cs_df$text[i]
   ),
-  encode = "form") %>%
+  encode = "form"
+) %>%
   content(as = "text", encoding = "UTF-8") %>%
   fromJSON() %>%
   .[["result"]] %>%
@@ -82,14 +86,15 @@ udpipe_api <- POST(
 # http://hdl.handle.net/11234/1-1650.
 
 
-kw_extract <- POST(
+kw_extract <- httr::RETRY(
+  verb = "POST",
   url = "http://lindat.mff.cuni.cz/services/ker",
   query = list(
     language = "cs",
     treshold = 0.2,
     `maximum-words` = 15
   ),
-  add_headers(
+  config = add_headers(
     Accept = "application/json",
     Connection = "keep-alive",
     `Accept-Encoding` = "gzip, deflate, br"
@@ -97,7 +102,8 @@ kw_extract <- POST(
   body = list(
     data = full_articles_subset$Content[[i]]
   ),
-  encode = "multipart")  %>%
+  encode = "multipart"
+) %>%
   content(as = "text", encoding = "UTF-8") %>%
   fromJSON() %>%
   .[c("keywords", "keyword_scores")] %>%
@@ -108,21 +114,20 @@ kw_extract <- POST(
 
 
 # KORPUS.CZ wordforms
-word_forms <- GET(
+word_forms <- httr::RETRY(
+  verb = "GET",
   url = "https://www.korpus.cz/slovo-v-kostce/word-forms/",
   query = list(
     domain = "cs",
     lemma = "byt",
     pos = "N"
   ),
-  add_headers(
+  config = add_headers(
     Accept = "application/json",
     Connection = "keep-alive",
     `Accept-Encoding` = "gzip, deflate, br"
-  )) %>%
+  )
+) %>%
   content(as = "text", encoding = "UTF-8") %>%
   fromJSON() %>%
   .[["result"]]
-
-
-

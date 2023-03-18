@@ -4,7 +4,6 @@ get_history_id <- function(media_name_vec,
                            newton_api_token,
                            log = TRUE,
                            log_path = "") {
-
   # 0. Load libraries ------------------------------------------
   # Package names
   packages <- c("httr", "dplyr", "jsonlite")
@@ -61,9 +60,10 @@ get_history_id <- function(media_name_vec,
   articles_id_list <- vector(mode = "list", length = length(media_name_vec))
 
   for (i in seq_along(media_name_vec)) {
-    articles_id_list[[i]] <- httr::POST(
+    articles_id_list[[i]] <- httr::RETRY(
+      verb = "POST",
       url = "https://api.newtonmedia.eu/v2/archive/filter/sourceautocomplete",
-      httr::add_headers(
+      config = httr::add_headers(
         Accept = "application/json",
         `Content-Type` = "application/json",
         Authorization = paste("token", as.character(newton_api_token))

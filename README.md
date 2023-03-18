@@ -1,108 +1,111 @@
 # Czech Media Migration Discourse Research, 2015-2023
+
 ## Repository of scripts, workflow and output
 
-***
+---
+
 ### Authors:
 
-*Ondrej Pekacek, Charles University* <br>
-*Irene Elmerot, Stockholm University*
+_Ondrej Pekacek, Charles University_ <br>
+_Irene Elmerot, Stockholm University_
 
-***
+---
 
 > NOTE: Some data could not be stored in this repository, due to their proprietary nature. This primarily affects media data obtained from Newton Media API.
 
-***
+---
 
-*Overview last updated: 14 July 2022*
-
+_Overview last updated: 14 July 2022_
 
 ## **Structure:**
 
 ## 1. Extraction of data
 
-- Media articles
-  - Newton Media database: Migration articles and counts of all media content (API)
-  - Disinformation Articles (EUvsDisinfo & newsplease scrape)
-- Facebook (media and journalists)
-  - Facebook Ads API
-  - Facebook public pages posts (Crowdtangle API) *work in progress*
-- Twitter (media and journalists)
-  - Twitter tweets (Twitter Academic API)
-  - Twitter account information & followers (Twitter Academic API)
-  - Twitter counts (Twitter Academic API)
-- Instagram (media and journalists) *work in progress*
-  - Public accounts posts (Crowdtangle API)
-  - Public accounts information (igramscraper)
-- Complementary datasets *work in progress*
-  - Relevant parliamentary speeches (Hlidac Statu API)
-  - Real media owners (Hlidac Statu API)
-  - GDELT (Big Query API)
-  - Corpora (SYN2020, representative corpus of Czech language)
-  - Google media political ads (Big Query API)
-  - Salience of migration over time (gtrendsR & Wikimedia API)
-- Visual data of posts *work in progress*
-  - Media, Twitter, Instagram (including stories), Facebook
+-   Media articles
+    -   Newton Media database: Migration articles and counts of all media content (API)
+    -   Disinformation Articles (EUvsDisinfo & newsplease scrape)
+-   Facebook (media and journalists)
+    -   Facebook Ads API
+    -   Facebook public pages posts (Crowdtangle API) _work in progress_
+-   Twitter (media and journalists)
+    -   Twitter tweets (Twitter Academic API)
+    -   Twitter account information & followers (Twitter Academic API)
+    -   Twitter counts (Twitter Academic API)
+-   Instagram (media and journalists) _work in progress_
+    -   Public accounts posts (Crowdtangle API)
+    -   Public accounts information (igramscraper)
+-   Complementary datasets _work in progress_
+    -   Relevant parliamentary speeches (Hlidac Statu API)
+    -   Real media owners (Hlidac Statu API)
+    -   GDELT (Big Query API)
+    -   Corpora (SYN2020, representative corpus of Czech language)
+    -   Google media political ads (Big Query API)
+    -   Salience of migration over time (gtrendsR & Wikimedia API)
+-   Visual data of posts _work in progress_
+    -   Media, Twitter, Instagram (including stories), Facebook
 
-## 2. Data pre-processing *work in progress*
+## 2. Data pre-processing _work in progress_
 
-- Media articles
-  - Preprocessing: Removal of uneeded characters/symbols (Regex)
-  - Lemmatization, POS tagging & other text features (Lindat UDPIPE API) *work in progress*
-  - Labeling of media types (provided by Cvrcek & Henys, last update February 2022)
+-   Media articles
+    -   Preprocessing: Removal of uneeded characters/symbols (Regex)
+    -   Lemmatization, POS tagging & other text features (Lindat UDPIPE API) _work in progress_
+    -   Labeling of media types (provided by Cvrcek & Henys, last update February 2022)
 
-## 3. Exploratory data analysis *work in progress*
+## 3. Exploratory data analysis _work in progress_
 
-- Media articles
-  - Counts of all migration content thorough time
-  - Proportion of migration content thorough time on all coverage
-  - How did the average lenght of the article differ across media types? *work in progress*
+-   Media articles
 
-- Twitter
-  - Filter media migration tweets and display in time
-  - Longitudinal comparison with overall migration Tweet counts
+    -   Counts of all migration content thorough time
+    -   Proportion of migration content thorough time on all coverage
+    -   How did the average lenght of the article differ across media types? _work in progress_
 
-- Extra
-  - Visualization of dependency trees of selected UDPIPE'd sentences (JS Treex)
+-   Twitter
 
-## 4. Data Analysis *work in progress*
+    -   Filter media migration tweets and display in time
+    -   Longitudinal comparison with overall migration Tweet counts
 
-- What are the most prominent entities in the migration coverage?
-  - Named Entity Recognition (Lindat NameTag 2 model)
-- What are the most similar words to migration-related terms and how did the meaning evolve?
-  - Word Embedding model (Wang2Vec/Word2Vec, GloVe, Fasttext)
-  - Word shift graphs (shifterator)
-- Has the overall sentiment evolved over time / differed across the media types?
-  - Sentiment Analysis (Czech SubLex, BERT Czert B model)
-- How did the media types differ in semantic grouping?
-  - Semantic Analysis (UCREL Semantic Analysis System)
-- What were the articles' key words?
-  - Keyword extraction (Lindat KER API / local TF-IDF)
-- Which media were most active in spreading disinformation about migration?
-  - Document similarity (Doc2Vec) with disinfo dataset
-- To what extent was the media discourse similar to political actors' speeches?
-  - Document similarity (Doc2Vec) with parliamentary speeches
-- How does the usage of linguistic features differ across media types?
-  - UDPIPE word features data
-- What difference exists in the discourse/framing of the refugees across media types?
-  - Word collocations and concordances (KWIC)
-  - LDA topic modeling
-- Did the usage (and pattern) of migration vs refugee terms differ across time and media types?
-  - Lexicon with regex
-  - Sequence analysis
-- What objects were most common in the migration coverage?
-  - Image object recognition (YOLOv4/v5)
-- What online networks/communities exist around key media and across types?
-  - Network analysis on Twitter data and users' behavior
-- What videos are being recommended by YouTube for key Czech media accounts?
-  - Network analysis of YT recommendations
+-   Extra
+    -   Visualization of dependency trees of selected UDPIPE'd sentences (JS Treex)
+
+## 4. Data Analysis _work in progress_
+
+-   What are the most prominent entities in the migration coverage?
+    -   Named Entity Recognition (Lindat NameTag 2 model)
+-   What are the most similar words to migration-related terms and how did the meaning evolve?
+    -   Word Embedding model (Wang2Vec/Word2Vec, GloVe, Fasttext)
+    -   Word shift graphs (shifterator)
+-   Has the overall sentiment evolved over time / differed across the media types?
+    -   Sentiment Analysis (Czech SubLex, BERT Czert B model)
+-   How did the media types differ in semantic grouping?
+    -   Semantic Analysis (UCREL Semantic Analysis System)
+-   What were the articles' key words?
+    -   Keyword extraction (Lindat KER API / local TF-IDF)
+-   Which media were most active in spreading disinformation about migration?
+    -   Document similarity (Doc2Vec) with disinfo dataset
+-   To what extent was the media discourse similar to political actors' speeches?
+    -   Document similarity (Doc2Vec) with parliamentary speeches
+-   How does the usage of linguistic features differ across media types?
+    -   UDPIPE word features data
+-   What difference exists in the discourse/framing of the refugees across media types?
+    -   Word collocations and concordances (KWIC)
+    -   LDA topic modeling
+-   Did the usage (and pattern) of migration vs refugee terms differ across time and media types?
+    -   Lexicon with regex
+    -   Sequence analysis
+-   What objects were most common in the migration coverage?
+    -   Image object recognition (YOLOv4/v5)
+-   What online networks/communities exist around key media and across types?
+    -   Network analysis on Twitter data and users' behavior
+-   What videos are being recommended by YouTube for key Czech media accounts?
+    -   Network analysis of YT recommendations
 
 ### 5. Writing it up
 
-- Stockholm June 2022 conference abstract & presentation
-- CCL Vienna June 2022 presentation
-- Article 1 draft (NER & KWIC concordances) *work in progress*
+-   Stockholm June 2022 conference abstract & presentation
+-   CCL Vienna June 2022 presentation
+-   Article 1 draft (NER & KWIC concordances) _work in progress_
 
-***
+---
 
 ## Project workflow diagram:
 
@@ -186,12 +189,12 @@ graph TD;
   udpipe ===> clean_data[(PROCESSED DATA)]
   clean_data ====> analysis([Data Analysis])
   eda([Exploratory Data Analysis]) === analysis
-  nlp([Natural Language Processing]) ===== analysis 
-  complementary_analyses([Complementary analyses]) === analysis 
+  nlp([Natural Language Processing]) ===== analysis
+  complementary_analyses([Complementary analyses]) === analysis
   counts[Counts over time <br> and media type] --> eda
   length[Content length over time <br> and media type] --> eda
   trees[Key sentences dependency trees: Treex] --> eda
-  network[Network analysis of <br> online media <br> YouTube channels: <br> igraph] --> complementary_analyses 
+  network[Network analysis of <br> online media <br> YouTube channels: <br> igraph] --> complementary_analyses
   vision[Object detection: <br> YOLO model] --> complementary_analyses
   sentiment[Sentiment analysis: <br> Czech Subjectivity Lexicon & <br> Czert BERT model] --> nlp
   ws_graphs[Word shift graphs: <br> shifterator] --> nlp
@@ -213,4 +216,3 @@ graph TD;
   communication ====> finish((PROJECT COMPLETION))
 
 ```
-

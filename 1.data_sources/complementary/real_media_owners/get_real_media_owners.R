@@ -19,9 +19,10 @@ hlidac_data <- list()
 # API call to query the details of the required dataset for more detailed info
 dataset_detail <- fromJSON(
   content(
-    httr::VERB(
-      verb = "GET", url = "https://www.hlidacstatu.cz/api/v2/datasety/skutecni-majitele",
-      httr::add_headers(accept = "application/json", Authorization = Sys.getenv("HS_TOKEN"))
+    httr::RETRY(
+      verb = "GET",
+      url = "https://www.hlidacstatu.cz/api/v2/datasety/skutecni-majitele",
+      config = httr::add_headers(accept = "application/json", Authorization = Sys.getenv("HS_TOKEN"))
     ),
     as = "text"
   )
@@ -36,21 +37,23 @@ token <- Sys.getenv("HS_TOKEN") # Hlidac Statu API token
 # Decoded string: "běženec* OR běženk* OR imigrant* OR migra* OR imigra* OR přistěhoval* OR uprchl* OR utečen* OR azylant*"
 query_string <- "CZECH%20NEWS%20CENTER%20a.s."
 
-hlidac_data[[i]] <- fromJSON(content(httr::VERB(
-  verb = "GET", url = "https://www.hlidacstatu.cz/api/v2/datasety/skutecni-majitele/hledat",
-  httr::add_headers(
-    accept = "application/json",
-    Authorization = token
+hlidac_data[[i]] <- fromJSON(
+  content(
+    httr::RETRY(
+      verb = "GET",
+      url = "https://www.hlidacstatu.cz/api/v2/datasety/skutecni-majitele/hledat",
+      config = httr::add_headers(
+        accept = "application/json",
+        Authorization = token
+      ),
+      query = list(
+        dotaz = query_string,
+        strana = i,
+        sort = sort,
+        desc = descending
+      )
+    ),
+    as = "text"
   ),
-  query = list(
-    dotaz = query_string,
-    strana = i,
-    sort = sort,
-    desc = descending
-  )
-),
-as = "text"
-),
-flatten = TRUE
+  flatten = TRUE
 )[["results"]]
-

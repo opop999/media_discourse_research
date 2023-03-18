@@ -61,9 +61,10 @@ extract_full_articles <- function(search_string,
   cat_sink("\n>--------------------<\n\n", as.character(Sys.time()))
 
   # 2. Get total number of results ------------------------------------------
-  total_results <- httr::POST(
+  total_results <- httr::RETRY(
+      verb = "POST",
       url = "https://api.newtonmedia.eu/v2/archive/searchCount",
-      httr::add_headers(
+      config = httr::add_headers(
         Accept = "application/json",
         `Content-Type` = "application/json",
         Authorization = paste("token", as.character(newton_api_token)),
@@ -113,9 +114,10 @@ extract_full_articles <- function(search_string,
 
   for (i in seq_len(total_pages)) {
 
-    full_articles_list[[i]] <- GET(
+    full_articles_list[[i]] <- httr::RETRY(
+      verb = "GET",
       url = "https://api.newtonmedia.eu/v2/archive/archives/search",
-      httr::add_headers(
+      config = httr::add_headers(
         Accept = "application/json",
         Authorization = paste("token", as.character(newton_api_token))
       ),

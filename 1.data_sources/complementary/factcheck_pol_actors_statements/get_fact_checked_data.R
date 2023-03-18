@@ -9,13 +9,16 @@ library(forcats)
 
 # Specify variables of interest with GraphQL query. Documentation and schema at: https://demagog.cz/graphiql
 # Useful resource for more manageable query body: https://codepen.io/dangodev/pen/Baoqmoy
-speakers_graphql_query = '{"query":"{speakers(limit:100000,offset:0){wikidataId osobaId firstName lastName body{shortName name}stats{true untrue misleading unverifiable}}}"}'
-statements_graphql_query = '{"query":"{statements(limit:100000,offset:0){id excerptedAt content sourceSpeaker{firstName lastName body{shortName name}}assessment{veracity{key}}}}"}'
+speakers_graphql_query <- '{"query":"{speakers(limit:100000,offset:0){wikidataId osobaId firstName lastName body{shortName name}stats{true untrue misleading unverifiable}}}"}'
+statements_graphql_query <- '{"query":"{statements(limit:100000,offset:0){id excerptedAt content sourceSpeaker{firstName lastName body{shortName name}}assessment{veracity{key}}}}"}'
 
 # Get all speakers
-speakers <-  POST(url = "https://demagog.cz/graphql",
-                  add_headers(`Content-Type` = "application/json"),
-                  body = speakers_graphql_query) %>%
+speakers <- httr::RETRY(
+  verb = "POST",
+  url = "https://demagog.cz/graphql",
+  config = httr::add_headers(`Content-Type` = "application/json"),
+  body = speakers_graphql_query
+) %>%
   content(as = "text") %>%
   fromJSON() %>%
   {
@@ -35,9 +38,12 @@ speakers <-  POST(url = "https://demagog.cz/graphql",
   )
 
 # Get all statements with their assessments of truthfulness
-statements <- POST(url = "https://demagog.cz/graphql",
-                   add_headers(`Content-Type` = "application/json"),
-                   body = statements_graphql_query) %>%
+statements <- httr::RETRY(
+  verb = "POST",
+  url = "https://demagog.cz/graphql",
+  config = httr::add_headers(`Content-Type` = "application/json"),
+  body = statements_graphql_query
+) %>%
   content(as = "text") %>%
   fromJSON() %>%
   {
@@ -61,16 +67,21 @@ statements_with_speakers <- statements %>%
   distinct()
 
 # Save combined dataset
-saveRDS(statements_with_speakers, "1.data_sources/complementary/contextual_datasets/factcheck_pol_actors_statements/data/statements_with_speakers.rds")
+saveRDS(
+  statements_with_speakers,
+  "1.data_sources/complementary/contextual_datasets/factcheck_pol_actors_statements/data/statements_with_speakers.rds"
+)
 
 # Quick vizualization
 
 # Which actor has the highest proportion of problematic (misleading + lies) statements?
 statements_with_speakers %>%
   group_by(speaker_full_name) %>%
-  summarise(n_problematic = first(n_untrue) + first(n_misleading),
-            n = n(),
-            prop_problematic = n_problematic/n) %>%
+  summarise(
+    n_problematic = first(n_untrue) + first(n_misleading),
+    n = n(),
+    prop_problematic = n_problematic / n
+  ) %>%
   filter(n >= 100) %>%
   na.omit() %>%
   ggplot(aes(y = fct_reorder(speaker_full_name, prop_problematic), x = prop_problematic)) +
@@ -87,9 +98,11 @@ statements_with_speakers %>%
   filter(grepl(regex_pattern, statement_txt, ignore.case = TRUE)) %>%
   mutate(problematic_statement = ifelse(assessment %in% c("misleading", "untrue"), 1, 0)) %>%
   group_by(speaker_full_name) %>%
-  summarise(n_problematic = sum(problematic_statement),
-            n = n(),
-            prop_problematic = n_problematic/n) %>%
+  summarise(
+    n_problematic = sum(problematic_statement),
+    n = n(),
+    prop_problematic = n_problematic / n
+  ) %>%
   na.omit() %>%
   filter(n >= 5) %>%
   ggplot(aes(y = fct_reorder(speaker_full_name, prop_problematic), x = prop_problematic)) +

@@ -14,11 +14,10 @@ invisible(lapply(packages, library, character.only = TRUE))
 
 # Function which interacts with the NameTag's API
 nametag_process <- function(article_id,
-                           article_text,
-                           log = TRUE,
-                           log_path = "",
-                           return_df = TRUE) {
-
+                            article_text,
+                            log = TRUE,
+                            log_path = "",
+                            return_df = TRUE) {
   # 1. Verify function's inputs ------------------------------------------
   stopifnot(
     is.character(article_id),
@@ -52,21 +51,21 @@ nametag_process <- function(article_id,
   start_time <- Sys.time()
 
   for (i in seq_along(nametag_dfs_list)) {
-
     if (i %% 5000 == 0) {
       cat_sink("\nAfter 5000 calls: Pausing for 600 seconds.\n")
       Sys.sleep(600)
       gc()
     }
 
-    nametag_dfs_list[[i]] <- POST(
+    nametag_dfs_list[[i]] <- httr::RETRY(
+      verb = "POST",
       url = "http://lindat.mff.cuni.cz/services/nametag/api/recognize",
       query = list(
         output = "vertical",
         model = "czech-cnec2.0-200831",
         input = "untokenized"
       ),
-      add_headers(
+      config = httr::add_headers(
         Accept = "application/json",
         `Content-Type` = "application/x-www-form-urlencoded",
         Connection = "keep-alive",
@@ -76,7 +75,8 @@ nametag_process <- function(article_id,
       body = list(
         data = article_text[[i]]
       ),
-      encode = "form")
+      encode = "form"
+    )
 
     if (httr::status_code(nametag_dfs_list[[i]]) == 500) {
       cat_sink("\nWARNING: API call nr.", i, " failed with error code 500. Missing data are likely.")
@@ -87,32 +87,27 @@ nametag_process <- function(article_id,
       # Longer wait time
       cat_sink("\nPausing for 600 seconds.\n")
       Sys.sleep(600)
-
     } else if (httr::status_code(nametag_dfs_list[[i]]) == 200) {
-
       nametag_dfs_list[[i]] <- nametag_dfs_list[[i]] %>%
         content(as = "text", encoding = "UTF-8") %>%
         fromJSON() %>%
         .[["result"]]
 
-        if (nchar(nametag_dfs_list[[i]]) >= 4) {
-
-        nametag_dfs_list[[i]] <-  nametag_dfs_list[[i]] %>%
-        fread(sep = "\t", header = FALSE,
-              colClasses = c("character", "character", "character"),
-              col.names = c("token_range", "ent_type", "ent_text")) %>%
-        .[, doc_id := article_id[[i]]]
+      if (nchar(nametag_dfs_list[[i]]) >= 4) {
+        nametag_dfs_list[[i]] <- nametag_dfs_list[[i]] %>%
+          fread(
+            sep = "\t", header = FALSE,
+            colClasses = c("character", "character", "character"),
+            col.names = c("token_range", "ent_type", "ent_text")
+          ) %>%
+          .[, doc_id := article_id[[i]]]
 
         cat_sink("\nAPI call nr.", i, "executed. The number of rows is", nrow(nametag_dfs_list[[i]]))
-
-        } else {
-
+      } else {
         nametag_dfs_list[[i]] <- tibble()
 
         cat_sink("\nAPI call nr.", i, "executed. No entities were gathered.")
-
-        }
-
+      }
     } else {
       cat_sink("\nWARNING: API call nr.", i, " returned the following code: ", httr::status_code(nametag_dfs_list[[i]]), ". Check the connection.")
       # Replace with empty dataset so bind_row at the end is successful
@@ -120,7 +115,6 @@ nametag_process <- function(article_id,
       # Longer wait time
       cat_sink("\nPausing for 600 seconds.\n")
       Sys.sleep(600)
-
     }
 
     # Random wait time as not to overwhelm the API
@@ -138,5 +132,4 @@ nametag_process <- function(article_id,
   } else if (return_df == FALSE) {
     return(nametag_dfs_list)
   }
-
 }
