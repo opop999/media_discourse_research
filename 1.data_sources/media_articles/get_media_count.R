@@ -47,10 +47,11 @@ get_count_per_media <- function(search_string = "*",
     cat_sink <- function(..., file = paste0(log_path, "get_media_count_log.txt"), append = TRUE) {
       cat(..., file = file, append = append)
     }
-    cat_sink("\n>--------------------<\n\n", as.character(Sys.time()))
+  } else {
+    cat_sink <- cat
   }
 
-
+  cat_sink("\n>--------------------<\n\n", as.character(Sys.time()))
   cat_sink("\nThe total number of media ids & the total amount of API calls:", length(media_history_id_vector), "\n")
 
   # 2. Loop over each media id ------------------------------------------
@@ -59,9 +60,10 @@ get_count_per_media <- function(search_string = "*",
   articles_id_count <- vector(mode = "list", length = length(media_history_id_vector))
 
   for (i in seq_along(media_history_id_vector)) {
-    articles_id_count[[i]] <- httr::POST(
+    articles_id_count[[i]] <- httr::RETRY(
+      verb = "POST",
       url = "https://api.newtonmedia.eu/v2/archive/searchCount",
-      httr::add_headers(
+      config = httr::add_headers(
         Accept = "application/json",
         `Content-Type` = "application/json",
         Connection = "keep-alive",
@@ -82,18 +84,19 @@ get_count_per_media <- function(search_string = "*",
       cat_sink("\nWARNING: API call nr.", i, "for media", media_name[[i]], "with id", media_history_id_vector[[i]], "in period", min_date, "-", max_date, "failed with error code 500. Missing data are likely.")
 
        # Replace count with NA if data extraction fails
-      articles_id_count[[i]] <- c(
+      articles_id_count[[i]] <- list(
         period_start = min_date,
         period_end = max_date,
         searched_name = media_name[[i]],
         sourceHistoryId = media_history_id_vector[[i]],
         id = media_id[[i]],
-        count = NA
+        count = NA_integer_
       )
 
     } else if (httr::status_code(articles_id_count[[i]]) == 200) {
       articles_id_count[[i]] <- articles_id_count[[i]] %>%
-        content(as = "parsed") %>%
+        content(as = "text") %>%
+        fromJSON() %>%
         c(period_start = min_date,
           period_end = max_date,
           searched_name = media_name[[i]],
