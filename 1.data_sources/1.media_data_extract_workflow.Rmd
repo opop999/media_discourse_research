@@ -169,7 +169,7 @@ source("media_articles/get_media_count.R")
 history_id_df_clean <- readRDS("media_articles/data/history_id_df_clean.rds")
 
 # Separate the whole time frame into periods of 3 months
-date_seq_period <- seq(as.Date("2015-01-01"), as.Date("2022-05-01"), by = "1 months")
+date_seq_period <- seq(as.Date("2015-01-01"), as.Date("2023-03-01"), by = "1 months")
 
 # Script loops over each period
 for (i in head(seq_along(date_seq_period), -1)) {
@@ -204,11 +204,12 @@ for (i in head(seq_along(date_seq_period), -1)) {
     file = paste0("media_articles/data/counts/chunks/all_counts_", date_seq_period[i], "_to_", date_seq_period[i + 1] - 1, ".rds")
   )
 
+  rm(list_of_counts_period)
   # Trigger memory garbage collection
   gc()
   
   # Pause between loops
-  Sys.sleep(runif(1, 600, 1800))
+  Sys.sleep(runif(1, 6, 18))
   
 }
 
