@@ -2,7 +2,7 @@
 title: "Regex Pre-processing"
 ---
 Load necessary packages
-```{r}
+```{r include=FALSE}
 # Package names
 packages <- c("dplyr", "stringr", "purrr", "tidyr")
 
@@ -41,7 +41,7 @@ existing_processed_files = {Path(file.replace("regex_", "")).stem for file in os
 # Get names of all of the chunks to be processed        
 chunks = sorted(({Path(file).stem for file in os.listdir(INPUT_DIR) if file.endswith(".rds")} - existing_processed_files))
 
-print(f"""The following chunks will will be processed: \n {chunks}""")
+print(f"""The following chunk(s) will will be processed: \n {chunks}""")
 
 gc.enable()
 
@@ -93,7 +93,7 @@ print("Regex preprocessing finished")
 Separate large chunks to smaller parts for easier sharing and processing
 
 ```{r}
-list_of_processed_chunks <- list.files(path = "media_articles/data/regex_processed/chunks", pattern = "*.rds", full.names = TRUE)
+list_of_processed_chunks <- list.files(path = "media_articles/data/regex_processed/chunks_add", pattern = "*.rds", full.names = TRUE)
 
 for (i in list_of_processed_chunks) {
   if (file.size(i) > 1) {

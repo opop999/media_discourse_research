@@ -2,9 +2,9 @@
 title: "UDPIPE Pre-processing"
 ---
 Load necessary packages
-```{r}
+```{r include=FALSE}
 # Package names
-packages <- c("dplyr", "stringr", "purrr", "tidyr")
+packages <- c("dplyr", "stringr", "purrr", "tidyr", "parallel", "pbmcapply")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -34,14 +34,61 @@ all_regex_chunks <- list.files(path = file.path("data", "regex_processed", "chun
 rstudioapi::jobRunScript(path = "udpipe_rstudio_jobs.R", importEnv = TRUE)
 ```
 
-Integrity check: Which years have we processed with UDPIPE 
+Integrity check: UDPIPE vs original Regex dataset
 ```{r}
-# Read the UDPIPE processed chunks back in, we only the id and date
-udpipe_df_ids <- list.files(path = "media_articles/data/udpipe_processed", pattern = "*.rds", full.names = TRUE) %>%
-  map_dfr(readRDS) %>%
-  pull(doc_id) %>%
-  unique() # keep only unique ids
+# Read the Regex processed chunks back in, we only the id
+list_of_regex_chunks <- list.files(path = "media_articles/data/regex_processed/chunks/", pattern = "*.rds", full.names = TRUE)
 
+get_regex_ids <- function(chunk_path) {
+  chunk_path %>%
+    readRDS() %>%
+    pull(article_id)
+}
+
+regex_doc_ids <- pbmclapply(list_of_regex_chunks, get_regex_ids, mc.cores = detectCores() - 1) %>% 
+  reduce(c) %>%
+  unique()
+
+# Read the UDPIPE processed chunks back in, we only keep the id
+list_of_udpipe_chunks <- list.files(path = "media_articles/data/udpipe_processed/chunks/", pattern = "*.rds", full.names = TRUE)
+
+get_udpipe_ids <- function(chunk_path) {
+  chunk_path %>%
+    readRDS() %>%
+    pull(doc_id) %>% 
+    unique()
+
+}
+
+udpipe_doc_ids <- pbmclapply(list_of_udpipe_chunks, get_udpipe_ids, mc.cores = detectCores() - 1) %>% 
+          unlist() %>%
+          unique()
+
+saveRDS(udpipe_doc_ids, "udpipe_doc_ids.rds")
+
+
+# Which documents were not processed with UDPIPE?
+missing_udpipe <- setdiff(regex_doc_ids, udpipe_doc_ids)
+
+saveRDS(missing_udpipe, "missing_udpipe.rds")
+```
+
+```{r}
+# Read the Regex processed chunks back in, only preserve the ones missing in UDPIPE'd dataset
+get_missing_articles <- function(chunk_path) {
+  chunk_path %>%
+    readRDS() %>%
+    filter(article_id %in% missing_udpipe)
+
+}
+
+missing_articles <- pbmclapply(list_of_regex_chunks, get_missing_articles, mc.cores = detectCores() - 1) %>% 
+  bind_rows(.id = "chunk_nr")
+
+```
+
+
+```{r}
 # Check which ids are collected for the specific period
 full_articles_selected_period <- list.files(path = "media_articles/data/regex_processed/chunks", pattern = "*.rds", full.names = TRUE) %>%
   .[grep("2015", .)] %>%
@@ -63,6 +110,10 @@ xtab_set <- function(A, B) {
   return(table(inA, inB))
 }
 
-xtab_set(udpipe_df_ids, udpipe_df_ids_new)
+xtab_set(delete_regex_doc_ids, delete_udpipe_doc_ids)
+
+
+
+
 ```
 
