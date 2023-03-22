@@ -20,7 +20,8 @@ packages <-
     "ggwordcloud",
     "ggpubr",
     "parallel",
-    "tibble"
+    "tibble",
+    "pbmcapply"
   )
 
 # Install packages not yet installed
@@ -58,26 +59,35 @@ doc_id_by_date <- list.files(path = annotated_df_path,
 saveRDS(doc_id_by_date, "data/doc_id_by_date_and_words.rds")
 ```
 
+
 Get information about number of tokens and sentences for each of the documents
 ```{r}
+
+# Path of UDPIPE processed data
+list_of_udpipe_chunks <- list.files(path = "../../2.data_transformations/media_articles/data/udpipe_processed/chunks", pattern = "*.rds", full.names = TRUE)
+
 get_token_counts <- function(chunk_path) {
   chunk_path %>% 
       readRDS() %>% 
       group_by(doc_id) %>% 
       summarize(nr_tokens = n(),
                 nr_sentences = max(sentence_id))
+    
 }
 
-token_counts_per_doc <- mclapply(list_of_udpipe_chunks, get_token_counts, mc.cores = detectCores() - 1) %>% 
+token_counts_per_doc <- pbmclapply(list_of_udpipe_chunks, get_token_counts, mc.cores = detectCores() - 1) %>% 
   bind_rows()
 
 saveRDS(token_counts_per_doc, "data/token_counts_per_doc.rds")
 
-test <- setdiff(doc_id_by_date$doc_id, token_counts_per_doc$doc_id)
-
-
 ```
 
+How many tokens and sentences does the corpus have?
+```{r}
+print(paste("The overall corpus has", sum(token_counts_per_doc$nr_tokens)/1000000, "million tokens."))
+print(paste("The overall corpus has", sum(token_counts_per_doc$nr_sentences)/1000000, "million sentences"))
+
+```
 
 
 ```{r}
