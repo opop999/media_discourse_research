@@ -217,7 +217,7 @@ for (i in head(seq_along(date_seq_period), -1)) {
 media_count_df_by_period <- list.files(path = "media_articles/data/counts/chunks/", pattern = "*.rds", full.names = TRUE) %>%
   map_dfr(readRDS)
 
-saveRDS(media_count_df_by_period, "media_articles/data/counts/media_count_df_by_period.rds")
+saveRDS(media_count_df_by_period, "media_articles/data/counts/media_count_df_by_1_month.rds")
  
 ```
 
