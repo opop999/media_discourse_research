@@ -15,10 +15,14 @@ packages <-
     "jsonlite",
     "ggplot2",
     "data.table",
-    "plotly",
+    # "plotly",
     "forcats",
-    "ggwordcloud",
-    "ggpubr"
+    # "ggwordcloud",
+    # "ggpubr",
+    "parallel",
+    "dtplyr",
+    "text2map",
+    "quanteda.textstats"
   )
 
 # Install packages not yet installed
@@ -31,7 +35,7 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 # Import media labels
-media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+# media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
 
 ```
 
@@ -171,5 +175,166 @@ collocs_2022_alt <- colocs_combined %>%
  
 ```
 
+# New 2023 workflow
+
+```{r}
+period_name <- "2"
+period_filter <- "2016|2017|2018|2019|2020|2021|2022-01"
+period_exclude <- FALSE
+media_type_filter <- "alternative"
+
+cs_stop_words <- fromJSON("../../2.data_transformations/media_articles/data/stopwords_cs.json")
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds") %>%
+                mutate(media_type = fct_collapse(media_type, alternative = c("antisystem", "political_tabloid"))) %>%
+                filter(media_type %in% media_type_filter)
+
+udpipe_chunks <-
+  list.files(path = "../../2.data_transformations/media_articles/data/udpipe_processed/chunks/",
+             pattern = "*.rds",
+             full.names = TRUE) %>%
+  .[grep(pattern = period_filter, ., invert = period_exclude)] 
+
+process_df <- function(i) {
+  readRDS(i) %>% 
+    lazy_dt() %>%
+    filter(upos %in% c("VERB", "NOUN", "ADJ", "PROPN") & doc_id %in% media_labels[["doc_id"]] & !lemma %in% cs_stop_words) %>%
+    transmute(doc_id, lemma = gsub("[^ěščřžýáíéóúůďťňa-z ]", " ", tolower(str_replace_na(lemma, replacement = "")))) %>% 
+    filter(nchar(lemma) > 1) %>% 
+    group_by(doc_id) %>%
+    summarize(text = str_squish(str_c(lemma, collapse = " "))) %>%
+    ungroup() %>%
+    as_tibble()
+}
+
+combined_df <- mclapply(udpipe_chunks, process_df, mc.cores = detectCores() - 1) %>% bind_rows()
+
+saveRDS(combined_df, paste0("data/", media_type_filter, "_", period_name, ".rds"))
+
+```
 
 
+```{r}
+
+terms_to_collocate <- c("migrant", "azylant", "imigrant", "uprchlík")
+periods <- c(paste0("alternative_", 1:3), paste0("mainstream_", 1:3))
+source("get_cooc_stats.R")
+df <- readRDS(paste0("data/", periods, ".rds"))
+
+cooc_stats_list <- vector("list", length = length(terms_to_collocate)) %>% setNames(terms_to_collocate)
+
+for (term in terms_to_collocate) {
+
+cooc_stats_list[[term]] <- df %>%
+    corpus(docid_field = "doc_id", text_field = "text") %>%
+    tokens(remove_punct = TRUE,
+           remove_numbers = TRUE,
+           padding = FALSE,
+           remove_symbols = TRUE) %>%
+    tokens_select(pattern = term,
+                  valuetype = "fixed",
+                  selection = "keep",
+                  window = 3,
+                  case_insensitive = TRUE,
+                  padding = FALSE) %>%
+    dfm(remove_padding = TRUE) %>%
+    dfm_select(min_nchar = 2) %>%
+    dfm_subset(ntoken(.) > 0) %>% 
+    dfm_trim(min_termfreq = 2,
+             termfreq_type = "count") %>% 
+    calculate_cooc_stats(cooc_term = term,
+                          dtm = .,
+                          measure = "LogDICE")
+
+print(paste("Term", term, "within period", periods, "finished collocation analysis."))
+
+}
+
+saveRDS(cooc_stats_list, paste0("data/", "stats_", periods, ".rds"))
+
+```
+
+```{r}
+# dtm <- df %>%
+#     corpus(docid_field = "doc_id", text_field = "text") %>%
+#     tokens(remove_punct = TRUE,
+#            remove_numbers = TRUE,
+#            padding = FALSE,
+#            remove_symbols = TRUE) %>%
+#     tokens_select(pattern = term,
+#                   valuetype = "fixed",
+#                   selection = "keep",
+#                   window = 3,
+#                   case_insensitive = TRUE,
+#                   padding = FALSE)
+# 
+# 
+# dtm_2 <- dtm %>%
+#     dfm(remove_padding = TRUE) %>%
+#     dfm_select(min_nchar = 2) %>% 
+#     dfm_subset(ntoken(.) > 0) %>% 
+#     dfm_trim(min_termfreq = 2, termfreq_type = "count")
+# 
+# 
+# 
+# test <- dtm_2 %>%
+#     calculate_cooc_stats(cooc_term = term,
+#                           dtm = .,
+#                           measure = "LogDICE")
+```
+
+```{r}
+dtm_stats(dtm_2)
+
+# Check columnmn names for presence of terms of interest: migrant, azylant, imigrant and uprchlík
+colnames(combined_corpus)[grep(x = colnames(combined_corpus), pattern = "migrant.*|imigrant.*|azylant.*|uprchlík.*")]
+
+```
+
+# Create vizualizations
+
+```{r}
+terms_to_collocate <- c("migrant", "azylant", "imigrant", "uprchlík")
+periods <- c(paste0("alternative_", 1:3), paste0("mainstream_", 1:3))
+periods_span <- rep(c("January 2015-December 2015","January 2016-January 2022", "February 2022-February 2023"),2)
+periods_media_type <- c(rep("Alternative", 3), rep("Mainstream", 3))
+
+for (i in seq_along(periods)) {
+  
+cooc_stats <- readRDS(paste0("data/", "stats_", periods[[i]], ".rds"))
+
+for (term in terms_to_collocate) {
+
+graph <- cooc_stats[[term]] %>%
+  tibble::enframe("collocate", "measure") %>%
+  mutate(collocate = fct_reorder(collocate, measure)) %>%
+  slice_max(order_by = measure, n = 30) %>%
+  ggplot(aes(x = measure, y = collocate, label = round(measure, digits = 1))) +
+    geom_col() +
+    geom_label(size = 1.7, label.padding = unit(0.09, "lines")) +
+    theme_classic() +
+    labs(y = element_blank(), x = "LogDice", title = paste("Top 30 collocates of",
+                                                           str_to_title(term),
+                                                           "in Czech",
+                                                           periods_media_type[[i]],
+                                                           "Media,",
+                                                           periods_span[[i]])) +
+    theme(plot.title = element_text(face = "bold", size = 7),
+        axis.title.x = element_text(size = 8),
+        plot.margin = margin(7,30,3,5, "pt")) +
+    scale_x_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 14, 1),
+  labels = seq(0, 14, 1),
+  limits = c(0, 14)
+  )
+
+print(paste("Term", term, "within period", periods_span[[i]], "finished exporting visualization."))
+
+  
+ggsave(graph, filename = paste0("graphs/", periods[[i]], "_", term, ".png"), device = "png", width = 1920, height = 1080, units = "px")
+
+}
+  
+}
+  
+```

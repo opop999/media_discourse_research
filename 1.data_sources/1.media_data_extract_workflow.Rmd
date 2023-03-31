@@ -96,9 +96,14 @@ duplicated_rows <- annotated_df[annotated_df$code %in% duplicated_code_ids,]
 
 Extract all of the media news outlets in the annotated dataset
 ```{r}
-unique_media_and_types <- annotated_df[,c("sourceName", "mediaType.id")] %>% distinct()
+unique_media_and_types <- annotated_df[,c("sourceName", "mediaType.id")] %>%
+  distinct() %>% 
+  transmute(name = sourceName,
+         media_type_id = as.character(mediaType.id)) %>% 
+  # Dataset has erroneusly "Stream.cz" as a TV and Online. We delete the TV record.
+  filter(name != "Stream.CZ" | media_type_id != "4")
 
-saveRDS(unique_media_and_types, "media_articles/data/unique_media_types.rds")
+saveRDS(unique_media_and_types, "media_articles/data/media_type_labels/unique_media_types.rds")
 ```
 
 2. Extracting "History Ids" from Newton database
@@ -107,7 +112,7 @@ saveRDS(unique_media_and_types, "media_articles/data/unique_media_types.rds")
 source("media_articles/get_media_id.R")
 
 # Reads dataset of distinct media outlet names and types from previous step
-unique_media_and_types <- readRDS("media_articles/data/unique_media_types.rds")
+unique_media_and_types <- readRDS("media_articles/data/media_type_labels/unique_media_types.rds")
 # Specify path to existing cleaned dataset of media names & ids to avoid repetition
 media_names_and_ids_clean_path <- "media_articles/data/history_id_df_clean.rds"
 # Specify path to existing raw list of queried media names and ids
@@ -116,14 +121,14 @@ history_id_df_raw_list_path <- "media_articles/data/history_id_list.rds"
 # Checks for the presence of existing clean dataset
 if (file.exists(media_names_and_ids_clean_path)) {
   unique_media_and_types <- unique_media_and_types %>%
-    filter(!sourceName %in% readRDS(media_names_and_ids_clean_path)[["searched_name"]])
+    filter(!name %in% readRDS(media_names_and_ids_clean_path)[["searched_name"]])
 }
 
 # Run fuction that queries the Newton database by media name and saves the information
 # regarding the media outlet id + so-called history id
 history_id_df_raw_list <- get_history_id(
-  media_name_vec = unique_media_and_types$sourceName,
-  media_types_vec = unique_media_and_types$mediaType.id,
+  media_name_vec = unique_media_and_types$name,
+  media_types_vec = as.numeric(unique_media_and_types$media_type_id),
   page_size = 3,
   newton_api_token = Sys.getenv("NEWTON_TOKEN"),
   log = TRUE,
@@ -424,7 +429,7 @@ full_articles_cz <- list.files(path = "media_articles/data/full/chunks/", patter
 Export informative counts about the total number of migration-related articles per media
 This could help judge the relevancy of each of the outlets within migration discourse.
 ```{r}
-full_articles_cz %>% transmute(media_name = SourceName) %>% count(media_name, sort = TRUE) %>% saveRDS("media_articles/data/newton_migration_articles_by_media.rds")
+full_articles_cz %>% transmute(name = SourceName) %>% count(media_name, sort = TRUE) %>% saveRDS("media_articles/data/counts/newton_migration_articles_by_media.rds")
 ```
 
 6. Get Newton Media's own media type labels: Using website version and JS script
@@ -510,11 +515,11 @@ combined_newton_media_types <- newton_media_types$level_3 %>%
     newton_media_types$level_2,
     by = c("parent_data_id" = "data_id")
   ) %>% transmute(media_id = as.integer(data_id),
-                  media = data_name.x,
+                  name = data_name.x,
                   media_type_newton = data_name.y)
 
 
-saveRDS(test, "media_articles/data/media_type_labels/combined_newton_media_types.rds")
+saveRDS(combined_newton_media_types, "media_articles/data/media_type_labels/website_newton_media_types.rds")
 
 ```
 
@@ -609,51 +614,6 @@ newton_migration_articles_by_media <-
   filter(!media_name %in% coders_matched_media$name,
          !grepl(media_name, pattern = "\\.cz") # Filter for "offline"
          ) 
-
-# Work in progress: Most offline above 1000 articles labelled
-custom_media_labels <- tibble::tribble(
-                                 ~name,     ~media_type, ~media_type_monitora,
-                   "Mladá fronta DNES",    "mainstream",      "news_politics",
-                            "blesk.cz",       "tabloid",    "society_tabloid",
-                               "ČT 24",    "mainstream",      "news_politics",
-                               "Právo",    "mainstream",      "news_politics",
-                       "Lidové noviny",    "mainstream",      "news_politics",
-                             "TV Nova",    "mainstream",      "news_politics",
-                            "ČRo Plus",    "mainstream",      "news_politics",
-                     "ČRo Radiožurnál",    "mainstream",      "news_politics",
-                         "Haló noviny",     "party_web",      "news_politics",
-                                "ČT 1",    "mainstream",      "news_politics",
-                  "Hospodářské noviny",    "mainstream",      "news_politics",
-                               "Prima",    "mainstream",      "news_politics",
-                      "CNN Prima News",    "mainstream",      "news_politics",
-                            "Polar TV",    "mainstream",      "news_politics",
-                                 "E15",    "mainstream",       "econ_fin_law",
-                             "Respekt",       "opinion",      "news_politics",
-                               "Blesk",       "tabloid",    "society_tabloid",
-                               "Metro",    "mainstream",           "regional",
-                              "Reflex",       "opinion",      "news_politics",
-                               "Týden",       "tabloid",    "society_tabloid",
-                             "Deník N", "investigative",      "news_politics",
-  "Frýdecko-místecký a třinecký deník",    "mainstream",           "regional",
-                    "Pardubický deník",    "mainstream",           "regional",
-                       "Písecký deník",    "mainstream",           "regional",
-                     "Vyškovský deník",    "mainstream",           "regional",
-                  "Prostějovský deník",    "mainstream",           "regional",
-                    "Benešovský deník",    "mainstream",           "regional",
-                   "Českolipský deník",    "mainstream",           "regional",
-                     "Jihlavský deník",    "mainstream",           "regional",
-                    "Domažlický deník",    "mainstream",           "regional",
-                              "Impuls",    "mainstream",      "news_politics",
-                         "Frekvence 1",    "mainstream",      "news_politics",
-                           "Rádio ZET",    "mainstream",      "news_politics",
-                           "ČRo Sever",    "mainstream",      "news_politics",
-                                "Aha!",       "tabloid",    "society_tabloid",
-                                  "A2",       "opinion",      "news_politics",
-                        "TV Barrandov",       "tabloid",    "society_tabloid"
-  )
-
-saveRDS(custom_media_labels, "media_articles/data/media_type_labels/custom_media_labels.rds")
-
 ```
 
 Step 3: Join all Newton media names with Cvrcek et al. media labels + our custom "offline" media labels
@@ -707,7 +667,7 @@ full_articles_cz <- list.files(path = "media_articles/data/full/chunks/", patter
 # Join our media labels dataset with the dataset of all document ids, joining by media_id key
 all_media_labels_with_doc_id  <- inner_join(joined_labels_df, full_articles_cz, by = "media_id")
 
-# Alternative, preserving the unlabelled media and adding new labels from Newton
+# Alternative, preserving the unlabeled media and adding new labels from Newton
 vc_and_newton_media_labels  <- left_join(full_articles_cz, joined_labels_df, by = "media_id") %>% 
   left_join(combined_newton_media_types, by = "media_id") %>% 
   select(-name, media)
@@ -717,6 +677,56 @@ saveRDS(vc_and_newton_media_labels, "media_articles/data/media_type_labels/vc_an
 
 ```
 
+Alternative workflow: getting media labels from Korpus.cz "Online 2 Now" corpus, published in late 2022
+
+```{r}
+# Path to .csv files, each contains names of media outlets (doc.resource) 
+# under the given media category (doc.media_type).
+# These data were extracted from the KonText tool using Frequency summaries. 
+# Their names reflect the given media type, such as antisystemic.csv, investigative.csv, etc.
+
+path_to_korpus_files <- "media_articles/data/media_type_labels/korpus_cz"
+
+new_labels <- list.files(path_to_korpus_files, full.names = TRUE)
+# Use the name of the .csv file to determine the media type, while removing the last four characters (file extension)
+names(new_labels) <- list.files(path_to_korpus_files, full.names = FALSE) %>% substr(1, nchar(.) - 4)
+
+read_articles <- function(file_path) {
+  file_path %>% 
+  read_csv2(col_names = c("rank", "media_name", "freq", "i.p.m"), col_types = "ncnn") %>%
+    transmute(media_name, type = names(file_path))
+}
+
+korpus_labels <- lapply(new_labels, read_articles) %>% 
+  bind_rows(.id = "media")
+
+saveRDS(korpus_labels, "media_articles/data/media_type_labels/korpus_labels.rds")
+
+```
+
+```{r}
+# Remove duplicates where the same media is in more than one category
+korpus_labels <- readRDS("media_articles/data/media_type_labels/korpus_labels.rds") %>% 
+  filter(!name %in% c(.$name[duplicated(.$name)], "ceskezpravy.eu", "raptor-tv.cz", "vipnoviny.cz"))
+
+# Load custom dataset with labels.
+# Work in progress: All above 100 articles in the whole period labelled
+custom_media_labels <- read_csv("media_articles/data/media_type_labels/custom_media_labels.csv")
+
+joined_labels <- bind_rows(korpus_labels, custom_media_labels) %>% distinct()
+
+# Get all article ids for each of the media that we have labels available
+# First load existing full articles dataset
+full_articles_cz <- list.files(path = "media_articles/data/full/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  map_dfr(readRDS) %>%
+  transmute(doc_id = Code, media_id = as.integer(SourceId), media_name = SourceName)
+
+# Join our media labels dataset with the dataset of all document ids, joining by media_id key
+all_media_labels_with_doc_id  <- inner_join(joined_labels, full_articles_cz, by = c("name" = "media_name")) %>% distinct()
+
+saveRDS(all_media_labels_with_doc_id, "media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds") 
+
+```
 
 
 

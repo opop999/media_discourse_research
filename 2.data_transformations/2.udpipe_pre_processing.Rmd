@@ -64,14 +64,40 @@ udpipe_doc_ids <- pbmclapply(list_of_udpipe_chunks, get_udpipe_ids, mc.cores = d
           unlist() %>%
           unique()
 
-saveRDS(udpipe_doc_ids, "udpipe_doc_ids.rds")
-
 
 # Which documents were not processed with UDPIPE?
 missing_udpipe <- setdiff(regex_doc_ids, udpipe_doc_ids)
 
 saveRDS(missing_udpipe, "missing_udpipe.rds")
 ```
+
+```{r}
+
+# # Read the UDPIPE processed chunks back in, we only keep the id
+# list_of_udpipe_chunks <- list.files(path = "media_articles/data/udpipe_processed/chunks/", pattern = "*.rds", full.names = TRUE)
+# 
+# chunks <- list_of_udpipe_chunks %>% 
+#     .[grep(pattern = "2022-05", .)] %>% 
+#   map_dfr(readRDS)
+# 
+# deduplicated <- chunks %>% distinct()
+# 
+# 
+# chunks_n <- 7
+# 
+# indexing <- rep(1:chunks_n, length.out = nrow(deduplicated), each = ceiling(nrow(deduplicated)/chunks_n))
+# 
+# splitted <- split(deduplicated, indexing)
+# 
+# Write the dataset to chunks
+pbmclapply(names(splitted), function(df) {
+  saveRDS(distinct(splitted[[df]]), file = paste0("media_articles/data/udpipe_processed/chunks/udpipe_regex_full_articles_2022-05_part_", df, ".rds"))
+}, mc.cores = detectCores() - 1)
+
+```
+
+
+
 
 ```{r}
 # Read the Regex processed chunks back in, only preserve the ones missing in UDPIPE'd dataset
@@ -111,9 +137,6 @@ xtab_set <- function(A, B) {
 }
 
 xtab_set(delete_regex_doc_ids, delete_udpipe_doc_ids)
-
-
-
 
 ```
 
