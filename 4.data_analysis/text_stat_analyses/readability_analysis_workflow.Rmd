@@ -1,0 +1,68 @@
+```{r}
+  # Load libraries
+  # Package names
+  packages <- c("dplyr", "parallel", "forcats", "tibble", "quanteda.textstats", "quanteda")
+
+  # Install packages not yet installed
+  installed_packages <- packages %in% rownames(installed.packages())
+  if (any(installed_packages == FALSE)) {
+    install.packages(packages[!installed_packages])
+  }
+
+  # Packages loading
+  invisible(lapply(packages, library, character.only = TRUE))
+```
+
+```{r}
+# Load data
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds") %>%
+  filter(media_type %in% c("mainstream", "antisystem", "political_tabloid"))
+
+regex_chunks <- list.files(path = "../../2.data_transformations/media_articles/data/regex_processed/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  .[grep("2015", .)] # Optionally filter for specific period
+
+# Read the NER-processed chunks back in
+readability_scores  <- mclapply(regex_chunks, function(chunk) {
+  readRDS(chunk) %>%
+    corpus(docid_field = "article_id") %>%
+    textstat_readability(measure = c("Flesch", "Flesch.Kincaid", "Coleman.Liau.short", "ARI")) %>%
+    inner_join(media_labels, c("document" = "doc_id")) %>%
+    mutate(media_type = fct_collapse(media_type, alternative = c("antisystem", "political_tabloid")))
+}, mc.cores = detectCores() - 1) %>% bind_rows()
+
+# Summarize readability scores
+readability_summary <- readability_scores %>%
+  group_by(media_type) %>%
+  summarize(avg_flesch = mean(Flesch),
+            avg_flesh_kincaid = mean(Flesch.Kincaid),
+            avg_coleman = mean(Coleman.Liau.short),
+            avg_ari = mean(ARI))
+```
+
+```{r}
+# Work in progress: using other Quanteda text statistic functions
+text_summary <- df %>%
+  corpus(docid_field = "article_id") %>%
+  textstat_summary() %>%
+  inner_join(media_labels, c("document" = "doc_id")) %>%
+  mutate(media_type = fct_collapse(media_type, alternative = c("antisystem", "political_tabloid")))
+
+diversity_summary <- df %>%
+  corpus(docid_field = "article_id") %>%
+  dfm() %>% # Add tokens
+  textstat_lexdiv() %>%
+  inner_join(media_labels, c("document" = "doc_id")) %>%
+  mutate(media_type = fct_collapse(media_type, alternative = c("antisystem", "political_tabloid")))
+
+diversity_summary %>%
+  group_by(media_type) %>%
+  summarize(avg = mean(TTR))
+
+freq_summary <- df %>%
+  corpus(docid_field = "article_id") %>%
+  dfm() %>% # Add tokens
+  textstat_frequency(groups = "docid_") %>% # fixS
+  inner_join(media_labels, c("document" = "doc_id")) %>%
+  mutate(media_type = fct_collapse(media_type, alternative = c("antisystem", "political_tabloid")))
+```
+
