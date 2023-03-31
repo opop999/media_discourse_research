@@ -1,0 +1,372 @@
+---
+title: "Named Entity Recognition of regex-cleaned chunks with NAMETAG model (via API)"
+---
+
+## Load necessary packages
+```{r include=FALSE}
+# Package names
+packages <-
+  c(
+    "dplyr",
+    "stringr",
+    "purrr",
+    "tidyr",
+    "tidytext",
+    "quanteda",
+    "jsonlite",
+    "ggplot2",
+    "data.table",
+    "plotly",
+    "forcats",
+    "ggwordcloud",
+    "ggpubr",
+    "parallel"
+  )
+
+# Install packages not yet installed
+installed_packages <- packages %in% rownames(installed.packages())
+if (any(installed_packages == FALSE)) {
+  install.packages(packages[!installed_packages])
+}
+
+# Packages loading
+invisible(lapply(packages, library, character.only = TRUE))
+
+# Import media labels
+media_labels <- readRDS("../../1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds")
+
+```
+
+## Using RStudio jobs to parallelize 
+```{r}
+# Set up parameters for this job
+ner_period <- "*"
+ner_exclude <- FALSE
+
+# Identify dataset chunks of interest
+all_chunks_path_ner <- list.files(path = file.path("../../2.data_transformations", "media_articles", "data", "regex_processed", "chunks"),
+                              pattern = "*.rds",
+                              full.names = TRUE) %>%
+                              .[grep(pattern = ner_period, ., invert = ner_exclude)] %>%
+                              sort()
+
+# Run the script as a RStudio job
+rstudioapi::jobRunScript(path = "ner_rstudio_jobs.R", importEnv = TRUE)
+```
+
+## Process the NER results with stemming to deal with duplicates
+```{r}
+max_words <- 5L # Set up the upper limit for the number of words that entity can consist of
+columns <- paste0("word_", 1:max_words)
+stemming_aggressive <- FALSE # Sets two levels of stemming within the Python script
+ner_period <- "2022-(02|03|04)" # Which period we are interested? c("2015-(10|11|12)", "2022-(02|03|04)")
+period_exclude <- FALSE
+entity_types <- c("P", "ia", "io", "ic", "if", "gc", "gr", "gt", "gu")
+
+# Read the NER-processed chunks back in
+ner_df <- list.files(path = "data/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  .[grep(pattern = ner_period, ., invert = period_exclude)] %>%
+  map_dfr(readRDS) %>%
+  filter(ent_type %in% entity_types) %>% # Select entity of interest: https://ufal.mff.cuni.cz/~strakova/cnec2.0/ne-type-hierarchy.pdf
+  mutate(ent_text = tolower(ent_text),
+         words_n = str_count(ent_text, "\\S+")) %>%
+  filter(between(words_n, 1, max_words)) %>%
+  separate(ent_text, into = all_of(columns), remove = FALSE, sep = "\\s", extra = "drop", fill = "right") %>%
+  mutate(across(all_of(columns), ~ str_replace(., "[[:punct:]]|[0-9]", NA_character_))) %>% # Optional: replace punctuation and digits with NA
+  select(-c(ent_text, words_n))
+
+# Import custom stemming script into Python
+reticulate::py_run_string("from czech_stemmer import cz_stem_list")
+# Process all columns of interest with this script
+reticulate::py_run_string("r.ner_df = r.ner_df.apply(lambda x: cz_stem_list(x, r.stemming_aggressive) if x.name in r.columns else x)")
+
+# Create a summary of the most common entities
+ner_summary_2015 <-  ner_df_2015 %>%
+  inner_join(media_labels, by = "doc_id") %>% # Optional, if we want to summarize based on media types
+  mutate(across(all_of(columns), ~ na_if(.x, "NA")),
+         media_type = fct_collapse(media_type, alternative = c("antisystem", "political_tabloid"))) %>%
+  unite("ent_text_stemmed", all_of(columns), sep = " ", na.rm = TRUE) %>%
+  filter(ent_text_stemmed != "", media_type %in% c("mainstream", "alternative")) %>%
+  group_by(media_type) %>% # Optional for media types
+  count(ent_text_stemmed) %>%
+  slice_max(n, n = 100) %>% # Optional for media types: Get top n entities per media type
+  mutate(n_scaled = (n - min(n)) / (max(n) - min(n))) %>% # scale variables to get values between 0,1
+  arrange(media_type)
+
+saveRDS(ner_summary_2015, "data/ner_summary_2015.rds")
+
+# Create a summary of the most common entities
+ner_summary_2022 <-  ner_df_2022 %>%
+  inner_join(media_labels, by = "doc_id") %>% # Optional, if we want to summarize based on media types
+  mutate(across(all_of(columns), ~ na_if(.x, "NA")),
+         media_type = fct_collapse(media_type, alternative = c("antisystem", "political_tabloid"))) %>%
+  unite("ent_text_stemmed", all_of(columns), sep = " ", na.rm = TRUE) %>%
+  filter(ent_text_stemmed != "", media_type %in% c("mainstream", "alternative")) %>%
+  group_by(media_type) %>% # Optional for media types
+  count(ent_text_stemmed) %>%
+  slice_max(n, n = 100) %>% # Optional for media types: Get top n entities per media type
+  mutate(n_scaled = (n - min(n)) / (max(n) - min(n))) %>% # scale variables to get values between 0,1
+  arrange(media_type)
+
+saveRDS(ner_summary_2022, "data/ner_summary_2022.rds")
+
+```
+
+NER Visualizations
+```{r}
+ner_summary_2022 <- readRDS("data/ner_summary_2022.rds") %>% group_by(media_type) %>% slice_max(n_scaled, n = 50) %>% ungroup()
+ner_summary_2015 <- readRDS("data/ner_summary_2015.rds") %>% group_by(media_type) %>% slice_max(n_scaled, n = 50) %>% ungroup()
+
+# Entities for 2015 period
+set.seed(3859)
+ggplot(ner_summary_2015, aes(label = ent_text_stemmed, size = n_scaled, color = n_scaled)) +
+  geom_text_wordcloud(
+    area_corr = TRUE,
+    max_steps = 1,
+    grid_size = 1,
+    eccentricity = .9
+  ) +
+  scale_size_area(max_size = 18) +
+  scale_color_continuous(type = "viridis") +
+  facet_wrap(~media_type) +
+  labs(title = "Entities in the Czech News Media Migration Coverage (October-December 2015)",
+       subtitle = "Named Entity Recognition of person, institution & place entities. Split by media type, top 50, stemmed.",
+       caption = "Data: Newton Media Archive, NameTag 2: Jana Straková, Milan Straka & Jan Hajič (2019), Czech stemmer: Jacques Savoy (2005)") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "grey90"),
+        plot.title = element_text(face = "bold", size = 80, margin = margin(0, 0, 3, 0)),
+        plot.subtitle = element_text(face = "italic", size = 8, margin = margin(0, 0, 10, 0)),
+        plot.caption = element_text(size = 6),
+        panel.border = element_rect(colour = "black",
+                                    fill = NA,
+                                    size = 0.5),
+        plot.margin = margin(7, 30, 5, 5, "pt"))
+
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/ner_2015.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+
+# Entities for 2022 period
+set.seed(3859)
+ggplot(ner_summary_2022, aes(label = ent_text_stemmed, size = n_scaled, color = n_scaled)) +
+  geom_text_wordcloud(
+    area_corr = TRUE,
+    max_steps = 1,
+    grid_size = 1,
+    eccentricity = .9
+  ) +
+  scale_size_area(max_size = 36) +
+  scale_color_continuous(type = "viridis") +
+  facet_wrap(~media_type) +
+  labs(title = "Entities in the Czech News Media Migration Coverage (February-April 2022)",
+       subtitle = "Named Entity Recognition of person, institution & place entities. Split by media type, top 50, stemmed.",
+       caption = "Data: Newton Media Archive, NameTag 2: Jana Straková, Milan Straka & Jan Hajič (2019), Czech stemmer: Jacques Savoy (2005)") +
+  theme_void() +
+  theme(plot.background = element_rect(fill = "grey90"),
+        plot.title = element_text(face = "bold", size = 80, margin = margin(0, 0, 3, 0)),
+        plot.subtitle = element_text(face = "italic", size = 8, margin = margin(0, 0, 10, 0)),
+        plot.caption = element_text(size = 6),
+        panel.border = element_rect(colour = "black",
+                                    fill = NA,
+                                    size = 0.5),
+        plot.margin = margin(7, 30, 5, 5, "pt"))
+
+ggsave("../../5.write_up/presentation_CCL_march_2022/graphics/ner_2022.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+```
+
+# Deal with incorrect indexing of files
+```{r}
+# Read the NER-processed chunks back in
+ner_df <- list.files(path = "data/chunks", pattern = "*.rds", full.names = TRUE) %>%
+  # .[grep(pattern = "2022-03|2022-04|2022-05", .)] %>%
+  map_dfr(readRDS) %>% distinct() %>% 
+  inner_join(correct_article_index, c("doc_id" = "article_id"))
+
+# Test for duplicates
+ner_df[duplicated(ner_df)]
+
+splitted <- split(ner_df, ner_df$file)
+
+splitted <- lapply(splitted, function(item) {
+  item$file <- NULL
+  return(item)
+})
+
+# Write the dataset to chunks
+mclapply(names(splitted), function(df) {
+  saveRDS(splitted[[df]], file = paste0("data/chunks/nametag_regex_full_articles_", df, ".rds"))
+}, mc.cores = detectCores() - 1)
+
+```
+
+# New 2023 analytical workflow
+```{r}
+max_words <- 5L # Set up the upper limit for the number of words that entity can consist of
+columns <- paste0("word_", 1:max_words)
+stemming_aggressive <- FALSE # Sets two levels of stemming within the Python script
+doc_id_by_date <- readRDS("../frequencies/data/doc_id_by_date.rds")
+
+entity_types <- c("P", "ms", "mn", "ia", "io", "ic", "if", "gc", "gr", "gt", "gu")
+
+# Read the NER-processed chunks back in
+ner_df <- mclapply(list.files(path = "data/chunks/", pattern = "*.rds", full.names = TRUE), function(chunk) {
+  readRDS(chunk) %>% 
+    filter(ent_type %in% entity_types)
+}, mc.cores = detectCores() - 1) %>% bind_rows()
+
+# Filter only for the media types that would be analyzed
+ner_df <- ner_df %>% 
+  inner_join(media_labels, "doc_id") %>% 
+  select(-c(name, media_id, token_range)) %>% 
+  filter(media_type %in% c("mainstream", "antisystem", "political_tabloid")) %>%
+  inner_join(doc_id_by_date, "doc_id")
+  
+# Shape dataset text prior to stemming
+ner_df <- ner_df %>% 
+  mutate(ent_text = tolower(ent_text),
+         words_n = str_count(ent_text, "\\S+")) %>%
+  filter(between(words_n, 1, max_words)) %>%
+  separate(ent_text, into = all_of(columns), remove = FALSE, sep = "\\s", extra = "drop", fill = "right") %>%
+  mutate(across(all_of(columns), ~ str_replace(., "[[:punct:]]|[0-9]", NA_character_))) %>% # Optional: replace punctuation and digits with NA
+  select(-c(ent_text, words_n, doc_id))
+
+saveRDS(ner_df, "data/ner_df.rds", compress = FALSE)
+
+```
+
+Stats to adjust ipm
+```{r}
+doc_id_by_date <- readRDS("../frequencies/data/doc_id_by_date.rds")
+token_counts_per_doc <- readRDS("../frequencies/data/token_counts_per_doc.rds") %>% 
+    inner_join(media_labels, "doc_id") %>% 
+    inner_join(doc_id_by_date, "doc_id")
+
+tokens_count_list <- vector("list", length = 6L) %>% setNames(c(paste0("alternative_", 1:3), paste0("mainstream_", 1:3)))
+
+dates <- list(c(as.Date("2015-01-01"), as.Date("2015-12-31")),
+              c(as.Date("2016-01-01"), as.Date("2022-01-31")),
+              c(as.Date("2022-02-01"), as.Date("2023-02-28")))
+
+for (i in seq_along(dates)) {
+  tokens_count_list[[paste0("alternative_", i)]] <- token_counts_per_doc %>% 
+    filter(media_type %in% c("antisystem", "political_tabloid") & date >= dates[[i]][1] & date <= dates[[i]][2]) %>% 
+    pull(nr_tokens) %>% 
+    sum()
+  
+  tokens_count_list[[paste0("mainstream_", i)]] <- token_counts_per_doc %>% 
+    filter(media_type == "mainstream" & date >= dates[[i]][1] & date <= dates[[i]][2]) %>%
+    pull(nr_tokens) %>% 
+    sum()
+}
+
+saveRDS(tokens_count_list, "data/tokens_count_list.rds")
+```
+
+
+```{r}
+ner_df <- readRDS("data/ner_df.rds")
+
+subperiods_ner_list <- vector("list", length = 6L) %>% setNames(c(paste0("alternative_", 1:3), paste0("mainstream_", 1:3)))
+
+
+subperiods_ner_list <- vector("list", length = 6L) %>% setNames(c(paste0("alternative_", 1:3), paste0("mainstream_", 1:3)))
+
+dates <- list(c(as.Date("2015-01-01"), as.Date("2015-12-31")),
+              c(as.Date("2016-01-01"), as.Date("2022-01-31")),
+              c(as.Date("2022-02-01"), as.Date("2023-02-28")))
+
+for (i in seq_along(dates)) {
+  subperiods_ner_list[[paste0("alternative_", i)]] <- ner_df %>%
+    filter(media_type %in% c("antisystem", "political_tabloid") & date >= dates[[i]][1] & date <= dates[[i]][2]) %>%
+    mutate(date = as.character(date)) %>%
+    select(-media_type)
+  
+  subperiods_ner_list[[paste0("mainstream_", i)]] <- ner_df %>%
+    filter(media_type == "mainstream" & date >= dates[[i]][1] & date <= dates[[i]][2]) %>%
+    mutate(date = as.character(date)) %>%
+    select(-media_type)
+}
+
+saveRDS(subperiods_ner_list, "data/subperiods_ner_list.rds", compress = FALSE)
+
+# Import custom stemming script into Python
+reticulate::py_run_string("from czech_stemmer import cz_stem_list")
+library(tidyverse)
+period <- c(paste0("alternative_", 1:3), paste0("mainstream_", 1:3))
+ner_df <- subperiods_ner_list[[period]]
+max_words <- 5L # Set up the upper limit for the number of words that entity can consist of
+columns <- paste0("word_", 1:max_words)
+stemming_aggressive <- FALSE 
+tokens_count_list <- readRDS("data/tokens_count_list.rds")
+
+# Process all columns of interest with this script
+reticulate::py_run_string("r.ner_df = r.ner_df.apply(lambda x: cz_stem_list(x, r.stemming_aggressive) if x.name in r.columns else x)")
+
+ner_df <- ner_df %>%
+  mutate(across(all_of(columns), ~ na_if(.x, "NA"))) %>%
+  unite("ent_text_stemmed",
+        all_of(columns),
+        sep = " ",
+        na.rm = TRUE) %>%
+  filter(ent_text_stemmed != "") %>%
+  group_by(ent_text_stemmed) %>% 
+  summarize(n = n(), ent_type = first(ent_type)) %>% 
+  ungroup() %>% 
+  mutate(n_ipm = (n / tokens_count_list[[period]]) * 1000000)
+
+saveRDS(ner_df, paste0("data/ner_", period, ".rds"))
+
+```
+
+NER Visualizations: BW barplots
+
+```{r}
+list_of_periods <- c(paste0("alternative_", 1:3), paste0("mainstream_", 1:3))
+
+# Define function to create graphs
+create_graph <- function(data, title) {
+  data %>%
+    slice_max(n_ipm, n = 30) %>% 
+    mutate(ent_text_stemmed = reorder(ent_text_stemmed, n_ipm)) %>% 
+    ggplot(aes(x = n_ipm, y = ent_text_stemmed)) +
+    geom_col() +
+    ylab(element_blank()) +
+    xlab("Occurences per million words") +
+    labs(title = title) +
+    theme_classic() +
+    theme(plot.title = element_text(face = "bold", size = 8),
+          axis.title.y = element_text(size = 8),
+          plot.margin = margin(7,30,3,5, "pt")) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(0, 10000, 500),
+      labels = seq(0, 10000, 500),
+      limits = c(0, 3800)
+    )
+}
+
+alternative_1_graph <- create_graph(ner_alternative_1, "Top 30 Named Entities in Czech Alternative Media, January 2015-December 2015")
+alternative_2_graph <- create_graph(ner_alternative_2, "Top 30 Named Entities in Czech Alternative Media, January 2016-January 2022")
+alternative_3_graph <- create_graph(ner_alternative_2, "Top 30 Named Entities in Czech Alternative Media, February 2022-February 2023")
+mainstream_1_graph <- create_graph(ner_mainstream_1, "Top 30 Named Entities in Czech Mainstream Media, January 2015-December 2015")
+mainstream_2_graph <- create_graph(ner_mainstream_2, "Top 30 Named Entities in Czech Mainstream Media, January 2016-January 2022")
+mainstream_3_graph <- create_graph(ner_mainstream_2, "Top 30 Named Entities in Czech Mainstream Media, February 2022-February 2023")
+
+# Save graphs
+lapply(list_of_periods, function(period) {
+  ggsave(plot = get(paste0(period, "_graph")), filename = paste0("graphs/", period, ".png"), device = "png", width = 1920, height = 1080, units = "px")
+})
+
+# Export top entities in csv
+list_of_periods <- c(paste0("alternative_", 1:3), paste0("mainstream_", 1:3))
+
+dfs_list <- lapply(list_of_periods, function(period) {
+  readRDS(paste0("data/ner_", period, ".rds")) %>% 
+    slice_max(n = 30, order_by = n_ipm) %>% 
+    mutate(sub_corpus = period)
+}) %>% bind_rows()
+
+write_csv(dfs_list, paste0("data/summary_ner.csv"))
+
+```
+
