@@ -1,0 +1,218 @@
+```{r}
+# Load necessary packages
+library(tm) # Text mining tools
+library(tidyverse) # Data wrangling tools
+library(stringi) # String manipulation tools
+library(parallel) # Tools for parallel computing
+library(igraph) # Network visualization tools
+library(rgexf) # GEXF file format tools
+
+# Set maximum number of words an entity can consist of
+max_words <- 5L
+
+# Create column names for entity words
+columns <- paste0("word_", 1:max_words)
+
+# Set stemming level
+stemming_aggressive <- FALSE
+
+# Set entity types to extract
+entity_types <- c("P", "ms", "mn", "ia", "io", "ic", "if", "gc", "gr", "gt", "gu")
+
+# Get list of named entity recognition (NER) chunks
+ner_chunks <- list.files(path = "4.data_analysis/named_entity_recognition/data/chunks/", pattern = "*.rds", full.names = TRUE) %>%
+  .[grep("2015", .)] # Select only chunks from 2015
+
+# Filter media labels for desired media types
+media_labels_filter <- readRDS("1.data_sources/media_articles/data/media_type_labels/all_media_labels_with_doc_id.rds") %>%
+  filter(media_type %in% c("mainstream", "antisystem", "political_tabloid"))
+
+# Read in NER chunks and filter for desired entity types and media labels
+ner_df <- mclapply(ner_chunks, function(chunk) {
+  readRDS(chunk) %>%
+    filter(ent_type %in% entity_types & doc_id %in% media_labels_filter$doc_id)
+}, mc.cores = detectCores() - 1) %>%
+  bind_rows()
+
+# Preprocess NER data
+ner_df <- ner_df %>%
+  # Remove non-letter characters and convert to lowercase
+  mutate(
+    ent_text = str_remove_all(str_to_lower(ent_text, locale = "cs"), "[^ěščřžýáíéóúůďťňa-z ]"),
+    # Count number of words in each entity
+    words_n = str_count(ent_text, "\\S+")
+  ) %>%
+  # Filter entities that have between 1 and max_words words and are at least 2 characters long
+  filter(between(words_n, 1, max_words) & nchar(ent_text) > 1) %>%
+  # Split entity text into separate columns for each word
+  separate(ent_text, into = all_of(columns), remove = FALSE, sep = "\\s", extra = "drop", fill = "right") %>%
+  # Optional: replace punctuation and digits with NA
+  mutate(across(all_of(columns), ~ str_replace(., "[[:punct:]]|[0-9]", NA_character_))) %>%
+  # Remove unnecessary columns
+  select(-c(ent_text, words_n, ent_type, token_range))
+
+###  Python's stemming script
+reticulate::py_run_string("from czech_stemmer import cz_stem_list")
+reticulate::py_run_string("r.ner_df = r.ner_df.apply(lambda x: cz_stem_list(x, r.stemming_aggressive) if x.name in r.columns else x)")
+
+
+# Putting it to suitable format
+df <- ner_df %>%
+  # Replace "NA" with NA
+  mutate(across(all_of(columns), ~ na_if(.x, "NA"))) %>%
+  # Combine all columns into one column
+  unite("ent_text_stemmed",
+    all_of(columns),
+    sep = "_",
+    na.rm = TRUE
+  ) %>%
+  # Remove rows where ent_text_stemmed is empty
+  filter(ent_text_stemmed != "") %>%
+  # Group by doc_id and summarize text
+  group_by(doc_id) %>%
+  summarize(text = str_squish(str_c(ent_text_stemmed, collapse = " ")))
+
+# Add type labels
+df <- df %>%
+  # Join media_labels_filter table on doc_id
+  inner_join(media_labels_filter, "doc_id") %>%
+  # Remove unnecessary columns
+  select(-c(media_id, doc_id, name)) %>%
+  # Collapse media_type levels
+  mutate(media_type = fct_collapse(media_type, alternative = c("antisystem", "political_tabloid")))
+
+# Save df as RDS file
+saveRDS(df, "network_df.rds")
+
+
+# df <- readRDS("2.data_transformations/media_articles/data/udpipe_processed/chunks/udpipe_regex_full_articles_2015-01_part_1.rds") %>%
+#   # filter(ent_type == "ps") %>%
+#   filter(upos %in% c("NOUN", "PROPN")) %>%
+#   mutate(lemma = str_remove_all(str_to_lower(lemma, locale = "cs"), "[^ěščřžýáíéóúůďťňa-z]"),
+#          words_n = str_count(lemma, "\\S+")) %>%
+#   filter(words_n == 1 & nchar(lemma) > 1) %>%
+#   select(doc_id, lemma) %>%
+#   # We can also use multi word entitites, probably by using _ in middle
+#   group_by(doc_id) %>%
+#   summarize(text = str_squish(str_c(lemma, collapse = " ")))
+
+df <- df %>%
+  filter(media_type == "mainstream")
+
+corp <- Corpus(VectorSource(df$text))
+# meta(tdm, "media_type") <- as.character(df$media_type)
+
+# remove terms appearing less than 10 times
+tdm <- corp %>%
+  TermDocumentMatrix(control = list(
+    # weighting = weightTfIdf,
+    wordLengths = c(2, Inf),
+    stopwords = c("g_", "v_"),
+    bounds = list(local = c(2, Inf))
+  )) %>% # For alt, no sparse removing, min 2
+  removeSparseTerms(0.995)
+# Mainstream, bounds min 1, remove sparse 0.995
+
+inspect(tdm)
+
+tdm_matrix <- tdm %>% as.matrix()
+# Transform matrix into binary
+tdm_matrix[tdm_matrix > 0] <- 1
+# transform into a term-term adjacency matrix
+tdm_matrix <- tdm_matrix %*% t(tdm_matrix)
+
+diag(tdm_matrix) <- 0
+
+# Create graph from adjacency matrix
+create_graph <- function(matrix) {
+  g <- graph.adjacency(matrix, weighted = TRUE, mode = "undirected")
+  g <- simplify(g)
+  return(g)
+}
+
+# Set vertex labels and degrees
+set_vertex_labels_and_degrees <- function(graph) {
+  V(graph)$label <- V(graph)$name
+  V(graph)$degree <- degree(graph)
+  V(graph)$label.cex <- 2.2 * V(graph)$degree / max(V(graph)$degree) + .2
+}
+
+# Set vertex and edge colors and widths
+set_colors_and_widths <- function(graph) {
+  egam <- (log(E(graph)$weight) + .4) / max(log(E(graph)$weight) + .4)
+  V(graph)$label.color <- rgb(0, 0, .2, .8)
+  V(graph)$frame.color <- NA
+  E(graph)$color <- rgb(.5, .5, 0, egam)
+  E(graph)$width <- egam
+}
+
+# Create graph from adjacency matrix
+g <- create_graph(tdm_matrix)
+
+# Set vertex labels and degrees
+set_vertex_labels_and_degrees(g)
+
+# Set vertex and edge colors and widths
+set_colors_and_widths(g)
+
+
+# https://www.rdatamining.com/examples/social-network-analysis
+# build a graph from the above matrix
+g <- graph.adjacency(tdm_matrix, weighted = TRUE, mode = "undirected")
+# remove loops
+g <- simplify(g)
+# set labels and degrees of vertices
+V(g)$label <- V(g)$name
+V(g)$degree <- degree(g)
+
+V(g)$label.cex <- 2.2 * V(g)$degree / max(V(g)$degree) + .2
+V(g)$label.color <- rgb(0, 0, .2, .8)
+V(g)$frame.color <- NA
+egam <- (log(E(g)$weight) + .4) / max(log(E(g)$weight) + .4)
+E(g)$color <- rgb(.5, .5, 0, egam)
+E(g)$width <- egam
+
+
+# tkplot(g, layout = layout.kamada.kawai) #interactive
+
+# Calculate degree and betweenness centrality
+deg <- degree(g)
+bet <- betweenness(g)
+
+# Filter out vertices with low centrality values
+g2 <- delete.vertices(g, which(deg < 3 | bet < 1))
+
+# Alternative, source() Gephi's algorithm source("force_atlas2_layout.R")
+# Remove plot margins
+png("second_mainstream_2015.png", 6500, 6000)
+par(mar = c(0, 0, 7, 0))
+# Plot the filtered graph
+set.seed(1)
+plot(
+  g,
+  layout = layout.fruchterman.reingold,
+  # vertex.label = NA,
+  vertex.size = 0.2,
+  vertex.shape = "none",
+  # vertex.color = "tomato",
+  vertex.label.cex = 0.5,
+  vertex.label.dist = 0.1,
+  vertex.label.color = "black",
+  edge.curved = .1,
+  # edge.arrow.size = .1,
+  edge.width = 0.3
+)
+title("Network of Co-occuring Entities, Mainstream Media, 2015", cex.main = 8)
+dev.off()
+
+
+###################
+# Export to Gefx format for Gephi compatibility
+gephi <- igraph.to.gexf(g)
+
+plot(gephi)
+
+write.gexf(gephi, output = "network.gexf")
+
+```
+
