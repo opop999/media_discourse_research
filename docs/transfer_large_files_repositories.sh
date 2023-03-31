@@ -1,4 +1,4 @@
-# Exemplary backup script that moves the large files which are in .gitignore from one local reository to another
+# Exemplary backup script that moves the large files which are in .gitignore from one local repository to another
 mv ../media_discourse_research/.Renviron .Renviron
 
 mv --backup=t ../media_discourse_research/1.data_sources/media_articles/data/full/chunks 1.data_sources/media_articles/data/full/
