@@ -91,9 +91,8 @@ print("Regex preprocessing finished")
 ```
 
 Separate large chunks to smaller parts for easier sharing and processing
-
 ```{r}
-list_of_processed_chunks <- list.files(path = "media_articles/data/regex_processed/chunks_add", pattern = "*.rds", full.names = TRUE)
+list_of_processed_chunks <- list.files(path = "media_articles/data/regex_processed/add", pattern = "*.rds", full.names = TRUE)
 
 for (i in list_of_processed_chunks) {
   if (file.size(i) > 1) {
@@ -112,12 +111,10 @@ for (i in list_of_processed_chunks) {
     unlink(i)
   }
 }
-
 ```
 
 Paralellized version (works on Linux)
 ```{r}
-
 list_of_processed_chunks <- list.files(path = "media_articles/data/regex_processed/chunks", pattern = "*.rds", full.names = TRUE)
 
 library(parallel)
@@ -141,3 +138,19 @@ process_df <- function(i) {
 mclapply(list_of_processed_chunks, process_df, mc.cores = detectCores() - 1)
 ```
 
+# Get correct indexes for other datasets to compare
+```{r}
+list_of_processed_chunks <- list.files(path = "media_articles/data/regex_processed/chunks", pattern = "*.rds", full.names = TRUE)
+
+list_of_indexes <- vector("list", length = length(list_of_processed_chunks)) %>% setNames(substr(list_of_processed_chunks, 64, nchar(list_of_processed_chunks) - 4))
+
+for (i in seq_along(list_of_processed_chunks)) {
+  list_of_indexes[[i]] <- list_of_processed_chunks[[i]] %>%
+    readRDS() %>%
+    select(article_id)
+}
+
+list_of_indexes <- list_of_indexes %>% bind_rows(.id = "file")
+
+saveRDS(list_of_indexes, "correct_article_index.rds")
+```
