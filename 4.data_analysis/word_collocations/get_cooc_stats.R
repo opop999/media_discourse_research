@@ -1,7 +1,9 @@
 # This function is taken from the following tutorial:
 # https://tm4ss.github.io/docs/Tutorial_5_Co-occurrence.html
+# It should be disponible at: https://github.com/tm4ss/tm4ss.github.io/blob/master/calculateCoocStatistics.R
+# Minor modification: Added calculation of LogDice measure - a "user-friendly" transformation of Dice
 
-calculate_cooc_stats <- function(cooc_term, dtm, measure = "DICE") {
+calculate_cooc_stats <- function(cooc_term, dtm, measure = "LogDICE") {
 
   # Ensure Matrix (SparseM} or matrix {base} format
   require(Matrix)
@@ -31,6 +33,11 @@ calculate_cooc_stats <- function(cooc_term, dtm, measure = "DICE") {
       dicesig <- 2 * kij / (ki + kj)
       dicesig <- dicesig[order(dicesig, decreasing = TRUE)]
       sig <- dicesig
+    },
+    LogDICE = {
+      dicesig <- 2 * kij / (ki + kj)
+      dicesig <- dicesig[order(dicesig, decreasing = TRUE)]
+      sig <- 14 + log2(dicesig)
     },
     LOGLIK = {
       logsig <- 2 * ((k * log(k)) - (ki * log(ki)) - (kj * log(kj)) + (kij * log(kij))
