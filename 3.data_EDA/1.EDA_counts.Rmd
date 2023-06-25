@@ -31,7 +31,7 @@ media_labels <- readRDS("../1.data_sources/media_articles/data/media_type_labels
 start_date <- as.Date("2015-01-01")
 end_date <- as.Date("2023-03-01")
 
-key_dates <- list(dates = c(as.Date("2015-05-11"),
+graph_settings <- list(dates = c(as.Date("2015-05-11"),
                         as.Date("2015-09-02"),
                         as.Date("2016-09-21"),
                         as.Date("2016-11-03"),
@@ -73,15 +73,17 @@ key_dates <- list(dates = c(as.Date("2015-05-11"),
                       #   -23
                       # )
 # Extended description text after peer-review feedback on article
-                      events = c("EU Commission \n  proposes refugee \nquotas",
-"Alan Kurdi \ndrowns in the \nMediterranean Sea",
-"Egypt shipwreck \nkills hundreds",
-"Two shipwrecks \noff Libyan \ncoast",
-"Czech Republic \nre-elects \nMiloš Zeman \nas president",
-"Italy and Malta\n deny entry \nto NGO ship\n Aquarius",
-"EU reports \nlowest number \nof migrant arrivals \nin five years",
-"Covid-19 pandemic\n declared",
-"Russia invades\n Ukraine"),
+events = c(
+  "EU Commission \n proposes refugee \nquotas",
+  "Alan Kurdi \ndrowns in the \nMediterranean Sea",
+  "Egypt shipwreck \nkills hundreds",
+  "Two shipwrecks \noff Libyan \ncoast",
+  "Czech Republic \nre-elects \nMiloš Zeman \nas president",
+  "Italy and Malta\n deny entry \nto NGO ship\n Aquarius",
+  "EU reports \nlowest number \nof migrant arrivals \nin five years",
+  "Covid-19 pandemic\n declared",
+  "Russia invades\n Ukraine"
+), 
                       color_graph_adjust = c(
                         -2,
                         -7,
@@ -94,16 +96,18 @@ key_dates <- list(dates = c(as.Date("2015-05-11"),
                         -4
                       ),
                       bw_graph_adjust = c(
-                        -6,
+                        -5,
                         -10,
-                        -15,
                         -13,
-                        -10,
+                        -11,
+                        -8,
                         -6,
                         -4,
                         -6,
                         -9
-                      )
+                      ),
+color_graph_txt_size = 1.5,
+bw_graph_txt_size = 1.6
                       )
 ```
 
@@ -219,16 +223,16 @@ saveRDS(combined_counts_per_media_and_month, "data/counts/combined_counts_media_
 combined_counts %>% 
   ggplot(aes(x = month)) +
   geom_col(aes(y = migration_count), fill = "#3db5ff") +
-  geom_vline(xintercept = as.numeric(key_dates$dates[1:length(key_dates$dates)]), color = "#563a3a", linetype = 2, linewidth = 0.2) +
-  geom_text(aes(x = key_dates$dates[1], y = 0, label = key_dates$events[1]), color = "#22209F", vjust = key_dates$color_graph_adjust[1], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[2], y = 0, label = key_dates$events[2]), color = "#22209F", vjust = key_dates$color_graph_adjust[2], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[3], y = 0, label = key_dates$events[3]), color = "#22209F", vjust = key_dates$color_graph_adjust[3], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[4], y = 0, label = key_dates$events[4]), color = "#22209F", vjust = key_dates$color_graph_adjust[4], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[5], y = 0, label = key_dates$events[5]), color = "#22209F", vjust = key_dates$color_graph_adjust[5], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[6], y = 0, label = key_dates$events[6]), color = "#22209F", vjust = key_dates$color_graph_adjust[6], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[7], y = 0, label = key_dates$events[7]), color = "#22209F", vjust = key_dates$color_graph_adjust[7], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[8], y = 0, label = key_dates$events[8]), color = "#22209F", vjust = key_dates$color_graph_adjust[8], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[9], y = 0, label = key_dates$events[9]), color = "#22209F", vjust = key_dates$color_graph_adjust[9], size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_vline(xintercept = as.numeric(graph_settings$dates[1:length(graph_settings$dates)]), color = "#563a3a", linetype = 2, linewidth = 0.2) +
+  geom_text(aes(x = graph_settings$dates[1], y = 0, label = graph_settings$events[1]), color = "#22209F", vjust = graph_settings$color_graph_adjust[1], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[2], y = 0, label = graph_settings$events[2]), color = "#22209F", vjust = graph_settings$color_graph_adjust[2], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[3], y = 0, label = graph_settings$events[3]), color = "#22209F", vjust = graph_settings$color_graph_adjust[3], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[4], y = 0, label = graph_settings$events[4]), color = "#22209F", vjust = graph_settings$color_graph_adjust[4], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[5], y = 0, label = graph_settings$events[5]), color = "#22209F", vjust = graph_settings$color_graph_adjust[5], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[6], y = 0, label = graph_settings$events[6]), color = "#22209F", vjust = graph_settings$color_graph_adjust[6], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[7], y = 0, label = graph_settings$events[7]), color = "#22209F", vjust = graph_settings$color_graph_adjust[7], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[8], y = 0, label = graph_settings$events[8]), color = "#22209F", vjust = graph_settings$color_graph_adjust[8], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[9], y = 0, label = graph_settings$events[9]), color = "#22209F", vjust = graph_settings$color_graph_adjust[9], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
   ylab("Articles count (in thousand)") +
   xlab(element_blank()) +
   labs(title = "Migration Articles in the Czech News Media: 2015-2022",
@@ -264,16 +268,16 @@ combined_counts %>%
   ggplot(aes(x = month, y = migration_prop)) +
   geom_line(color = "#3db5ff") +
   geom_point(color = "#3db5ff", size = 0.5) +
-  geom_vline(xintercept = as.numeric(key_dates$dates[1:length(key_dates$dates)]), color = "#563a3a", linetype = 2, linewidth = 0.2) +
-  geom_text(aes(x = key_dates$dates[1], y = 0, label = key_dates$events[1]), color = "#22209F", vjust = key_dates$color_graph_adjust[1], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[2], y = 0, label = key_dates$events[2]), color = "#22209F", vjust = key_dates$color_graph_adjust[2], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[3], y = 0, label = key_dates$events[3]), color = "#22209F", vjust = key_dates$color_graph_adjust[3], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[4], y = 0, label = key_dates$events[4]), color = "#22209F", vjust = key_dates$color_graph_adjust[4], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[5], y = 0, label = key_dates$events[5]), color = "#22209F", vjust = key_dates$color_graph_adjust[5], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[6], y = 0, label = key_dates$events[6]), color = "#22209F", vjust = key_dates$color_graph_adjust[6], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[7], y = 0, label = key_dates$events[7]), color = "#22209F", vjust = key_dates$color_graph_adjust[7], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[8], y = 0, label = key_dates$events[8]), color = "#22209F", vjust = key_dates$color_graph_adjust[8], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[9], y = 0, label = key_dates$events[9]), color = "#22209F", vjust = key_dates$color_graph_adjust[9], size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_vline(xintercept = as.numeric(graph_settings$dates[1:length(graph_settings$dates)]), color = "#563a3a", linetype = 2, linewidth = 0.2) +
+  geom_text(aes(x = graph_settings$dates[1], y = 0, label = graph_settings$events[1]), color = "#22209F", vjust = graph_settings$color_graph_adjust[1], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[2], y = 0, label = graph_settings$events[2]), color = "#22209F", vjust = graph_settings$color_graph_adjust[2], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[3], y = 0, label = graph_settings$events[3]), color = "#22209F", vjust = graph_settings$color_graph_adjust[3], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[4], y = 0, label = graph_settings$events[4]), color = "#22209F", vjust = graph_settings$color_graph_adjust[4], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[5], y = 0, label = graph_settings$events[5]), color = "#22209F", vjust = graph_settings$color_graph_adjust[5], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[6], y = 0, label = graph_settings$events[6]), color = "#22209F", vjust = graph_settings$color_graph_adjust[6], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[7], y = 0, label = graph_settings$events[7]), color = "#22209F", vjust = graph_settings$color_graph_adjust[7], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[8], y = 0, label = graph_settings$events[8]), color = "#22209F", vjust = graph_settings$color_graph_adjust[8], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[9], y = 0, label = graph_settings$events[9]), color = "#22209F", vjust = graph_settings$color_graph_adjust[9], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
   ylab(element_blank()) +
   xlab(element_blank()) +
   labs(title = "Proportion of Migration Content in the Czech News Media: 2015-2022",
@@ -308,16 +312,16 @@ combined_counts_grouped %>%
   ggplot(aes(x = month, y = migration_prop, color = media_type)) +
   geom_line() +
   geom_point(size = 0.5) +
-  geom_vline(xintercept = as.numeric(key_dates$dates[1:length(key_dates$dates)]), color = "#563a3a", linetype = 2, linewidth = 0.2) +
-  geom_text(aes(x = key_dates$dates[1], y = 0, label = key_dates$events[1]), color = "#22209F", vjust = key_dates$color_graph_adjust[1], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[2], y = 0, label = key_dates$events[2]), color = "#22209F", vjust = key_dates$color_graph_adjust[2], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[3], y = 0, label = key_dates$events[3]), color = "#22209F", vjust = key_dates$color_graph_adjust[3], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[4], y = 0, label = key_dates$events[4]), color = "#22209F", vjust = key_dates$color_graph_adjust[4], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[5], y = 0, label = key_dates$events[5]), color = "#22209F", vjust = key_dates$color_graph_adjust[5], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[6], y = 0, label = key_dates$events[6]), color = "#22209F", vjust = key_dates$color_graph_adjust[6], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[7], y = 0, label = key_dates$events[7]), color = "#22209F", vjust = key_dates$color_graph_adjust[7], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[8], y = 0, label = key_dates$events[8]), color = "#22209F", vjust = key_dates$color_graph_adjust[8], size = 1.5, fontface = "bold", check_overlap = TRUE) +
-  geom_text(aes(x = key_dates$dates[9], y = 0, label = key_dates$events[9]), color = "#22209F", vjust = key_dates$color_graph_adjust[9], size = 1.5, fontface = "bold", check_overlap = TRUE) +
+  geom_vline(xintercept = as.numeric(graph_settings$dates[1:length(graph_settings$dates)]), color = "#563a3a", linetype = 2, linewidth = 0.2) +
+  geom_text(aes(x = graph_settings$dates[1], y = 0, label = graph_settings$events[1]), color = "#22209F", vjust = graph_settings$color_graph_adjust[1], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[2], y = 0, label = graph_settings$events[2]), color = "#22209F", vjust = graph_settings$color_graph_adjust[2], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[3], y = 0, label = graph_settings$events[3]), color = "#22209F", vjust = graph_settings$color_graph_adjust[3], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[4], y = 0, label = graph_settings$events[4]), color = "#22209F", vjust = graph_settings$color_graph_adjust[4], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[5], y = 0, label = graph_settings$events[5]), color = "#22209F", vjust = graph_settings$color_graph_adjust[5], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[6], y = 0, label = graph_settings$events[6]), color = "#22209F", vjust = graph_settings$color_graph_adjust[6], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[7], y = 0, label = graph_settings$events[7]), color = "#22209F", vjust = graph_settings$color_graph_adjust[7], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[8], y = 0, label = graph_settings$events[8]), color = "#22209F", vjust = graph_settings$color_graph_adjust[8], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
+  geom_text(aes(x = graph_settings$dates[9], y = 0, label = graph_settings$events[9]), color = "#22209F", vjust = graph_settings$color_graph_adjust[9], size = graph_settings$color_graph_txt_size, fontface = "bold", check_overlap = TRUE) +
   ylab(element_blank()) +
   xlab(element_blank()) +
   labs(title = "Proportion of Migration Content in the Czech news media: 2015-2022",
@@ -358,16 +362,16 @@ combined_counts %>%
   ggplot(aes(x = month, y = migration_prop)) +
     geom_line() +
     # geom_hline(yintercept = mean(combined_counts$migration_prop), linetype = 1, size = 0.1) +
-    geom_vline(xintercept = as.numeric(key_dates$dates[1:length(key_dates$dates)]), linetype = 2, linewidth = 0.15) +
-    geom_text(aes(x = key_dates$dates[1], y = 0, label = key_dates$events[1]), vjust = key_dates$bw_graph_adjust[1], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[2], y = 0, label = key_dates$events[2]), vjust = key_dates$bw_graph_adjust[2], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[3], y = 0, label = key_dates$events[3]), vjust = key_dates$bw_graph_adjust[3], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[4], y = 0, label = key_dates$events[4]), vjust = key_dates$bw_graph_adjust[4], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[5], y = 0, label = key_dates$events[5]), vjust = key_dates$bw_graph_adjust[5], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[6], y = 0, label = key_dates$events[6]), vjust = key_dates$bw_graph_adjust[6], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[7], y = 0, label = key_dates$events[7]), vjust = key_dates$bw_graph_adjust[7], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[8], y = 0, label = key_dates$events[8]), vjust = key_dates$bw_graph_adjust[8], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[9], y = 0, label = key_dates$events[9]), vjust = key_dates$bw_graph_adjust[9], size = 1.7, check_overlap = TRUE) +
+    geom_vline(xintercept = as.numeric(graph_settings$dates[1:length(graph_settings$dates)]), linetype = 2, linewidth = 0.15) +
+    geom_text(aes(x = graph_settings$dates[1], y = 0, hjust = 0.4, label = graph_settings$events[1]), vjust = graph_settings$bw_graph_adjust[1], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[2], y = 0, label = graph_settings$events[2]), vjust = graph_settings$bw_graph_adjust[2], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[3], y = 0, label = graph_settings$events[3]), vjust = graph_settings$bw_graph_adjust[3], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[4], y = 0, label = graph_settings$events[4]), vjust = graph_settings$bw_graph_adjust[4], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[5], y = 0, label = graph_settings$events[5]), vjust = graph_settings$bw_graph_adjust[5], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[6], y = 0, label = graph_settings$events[6]), vjust = graph_settings$bw_graph_adjust[6], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[7], y = 0, label = graph_settings$events[7]), vjust = graph_settings$bw_graph_adjust[7], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[8], y = 0, label = graph_settings$events[8]), vjust = graph_settings$bw_graph_adjust[8], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[9], y = 0, label = graph_settings$events[9]), vjust = graph_settings$bw_graph_adjust[9], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
     ylab(element_blank()) +
     xlab(element_blank()) +
     # labs(title = "Proportion of Migration Content in Czech News Media, January 2015-February 2023") +
@@ -397,16 +401,16 @@ ggsave("graphs/migration_content_proportion.png", device = "png",
 combined_counts_grouped %>% 
   ggplot(aes(x = month, y = migration_prop, linetype = media_type)) +
     geom_line() +
-    geom_vline(xintercept = as.numeric(key_dates$dates[1:length(key_dates$dates)]), linetype = 2, linewidth = 0.15) +
-    geom_text(aes(x = key_dates$dates[1], y = 0, label = key_dates$events[1]), vjust = key_dates$bw_graph_adjust[1], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[2], y = 0, label = key_dates$events[2]), vjust = key_dates$bw_graph_adjust[2], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[3], y = 0, label = key_dates$events[3]), vjust = key_dates$bw_graph_adjust[3], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[4], y = 0, label = key_dates$events[4]), vjust = key_dates$bw_graph_adjust[4], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[5], y = 0, label = key_dates$events[5]), vjust = key_dates$bw_graph_adjust[5], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[6], y = 0, label = key_dates$events[6]), vjust = key_dates$bw_graph_adjust[6], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[7], y = 0, label = key_dates$events[7]), vjust = key_dates$bw_graph_adjust[7], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[8], y = 0, label = key_dates$events[8]), vjust = key_dates$bw_graph_adjust[8], size = 1.7, check_overlap = TRUE) +
-    geom_text(aes(x = key_dates$dates[9], y = 0, label = key_dates$events[9]), vjust = key_dates$bw_graph_adjust[9], size = 1.7, check_overlap = TRUE) +
+    geom_vline(xintercept = as.numeric(graph_settings$dates[1:length(graph_settings$dates)]), linetype = 2, linewidth = 0.13) +
+    geom_text(aes(x = graph_settings$dates[1], y = 0, hjust = 0.4, label = graph_settings$events[1]), vjust = graph_settings$bw_graph_adjust[1], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[2], y = 0, label = graph_settings$events[2]), vjust = graph_settings$bw_graph_adjust[2], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[3], y = 0, label = graph_settings$events[3]), vjust = graph_settings$bw_graph_adjust[3], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[4], y = 0, label = graph_settings$events[4]), vjust = graph_settings$bw_graph_adjust[4], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[5], y = 0, label = graph_settings$events[5]), vjust = graph_settings$bw_graph_adjust[5], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[6], y = 0, label = graph_settings$events[6]), vjust = graph_settings$bw_graph_adjust[6], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[7], y = 0, label = graph_settings$events[7]), vjust = graph_settings$bw_graph_adjust[7], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[8], y = 0, label = graph_settings$events[8]), vjust = graph_settings$bw_graph_adjust[8], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[9], y = 0, label = graph_settings$events[9]), vjust = graph_settings$bw_graph_adjust[9], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
     ylab(element_blank()) +
     xlab(element_blank()) +
     # labs(title = "Proportion of Migration Content in Czech Mainstream and Alternative media, January 2015-February 2023") +

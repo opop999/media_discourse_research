@@ -867,8 +867,8 @@ key_dates <- setNames(c(as.Date("2015-05-11"),
                         "Alan Kurdi",
                         "Egypt shipwreck",
                         "Libya shipwreck",
-                        "Milos Zeman re-elected",
-                        "Aquarius rejected",
+                        "Miloš Zeman re-election",
+                        "Aquarius rejection",
                         "Lowest 5yr arrivals",
                         "Pandemic start",
                         "Invasion of Ukraine"))
@@ -922,9 +922,9 @@ mainst_frequency_summary <- key_lemma_per_doc %>%
 saveRDS(mainst_frequency_summary, "data/mainst_frequency_summary.rds")
 ```
 
-
+# Graphs of Frequencies
+## Whole corpus
 ```{r}
-# Whole corpus
 ggplot(frequency_summary_all, aes(x = date, y = ipm_freq, linetype = category)) +
   geom_line() +
   geom_vline(xintercept = as.numeric(key_dates[1:length(key_dates)]), linetype = 2, size = 0.15) +
@@ -962,8 +962,10 @@ ggplot(frequency_summary_all, aes(x = date, y = ipm_freq, linetype = category)) 
 
 ggsave("graphs/whole_corpus.png", device = "png",
        width = 1920, height = 1080, units = "px")
+```
 
-# Alt sub-corpus
+## Alt sub-corpus
+```{r}
 ggplot(alt_frequency_summary, aes(x = date, y = ipm_freq, linetype = category)) +
   geom_line() +
   geom_vline(xintercept = as.numeric(key_dates[1:length(key_dates)]), linetype = 2, size = 0.15) +
@@ -1001,7 +1003,10 @@ ggplot(alt_frequency_summary, aes(x = date, y = ipm_freq, linetype = category)) 
 
 ggsave("graphs/alt_corpus.png", device = "png",
        width = 1920, height = 1080, units = "px")
+```
 
+## Mainstream sub-corpus
+```{r}
 # Mainstream sub-corpus
 ggplot(mainst_frequency_summary, aes(x = date, y = ipm_freq, linetype = category)) +
   geom_line() +
@@ -1040,8 +1045,10 @@ ggplot(mainst_frequency_summary, aes(x = date, y = ipm_freq, linetype = category
 
 ggsave("graphs/mainst_corpus.png", device = "png",
        width = 1920, height = 1080, units = "px")
+```
 
-
+## Combined Alternative and Mainstream Graph
+```{r}
 alt_frequency_summary$media_type <- "Alternative Media"
 mainst_frequency_summary$media_type <- "Mainstream Media"
 
@@ -1049,16 +1056,16 @@ alt_frequency_summary %>%
   bind_rows(mainst_frequency_summary) %>% 
   # unite("category_by_type", all_of(c("media_type", "category"))) %>% 
   ggplot(aes(x = date, y = ipm_freq, linetype = category)) +
-  geom_line() +
+  geom_line(size = 0.4) +
   facet_wrap(~ media_type, nrow = 2) +
-  geom_vline(xintercept = as.numeric(key_dates[1:length(key_dates)]), linetype = 2, size = 0.1) +
+  geom_vline(xintercept = as.numeric(key_dates[1:length(key_dates)]), linetype = 2, linewidth = 0.1) +
   geom_text(aes(x = key_dates[1], y = 0, label = names(key_dates)[1]), vjust = -17, size = 1.8, check_overlap = TRUE) +
   geom_text(aes(x = key_dates[2], y = 0, label = names(key_dates)[2]), vjust = -22, size = 1.8, check_overlap = TRUE) +
   geom_text(aes(x = key_dates[3], y = 0, label = names(key_dates)[3]), vjust = -13, size = 1.8, check_overlap = TRUE) +
   geom_text(aes(x = key_dates[4], y = 0, label = names(key_dates)[4]), vjust = -6, size = 1.8, check_overlap = TRUE) +
-  geom_text(aes(x = key_dates[5], y = 0, label = names(key_dates)[5]), vjust = -17, size = 1.8, check_overlap = TRUE) +
-  geom_text(aes(x = key_dates[6], y = 0, label = names(key_dates)[6]), vjust = -22, size = 1.8, check_overlap = TRUE) +
-  geom_text(aes(x = key_dates[7], y = 0, label = names(key_dates)[7]), vjust = -25, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[5], y = 0, label = names(key_dates)[5]), vjust = -15, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[6], y = 0, label = names(key_dates)[6]), vjust = -19, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[7], y = 0, label = names(key_dates)[7]), vjust = -22, size = 1.8, check_overlap = TRUE) +
   geom_text(aes(x = key_dates[8], y = 0, label = names(key_dates)[8]), vjust = -11, size = 1.8, check_overlap = TRUE) +
   geom_text(aes(x = key_dates[9], y = 0, label = names(key_dates)[9]), vjust = -5, size = 1.8, check_overlap = TRUE) +
   ylab("Occurrences per million words") +
@@ -1086,10 +1093,6 @@ alt_frequency_summary %>%
 
 ggsave("graphs/alt_and_mainst_corpus.png", device = "png",
        width = 1920, height = 1080, units = "px")
-
-
-
-
 ```
 
 
@@ -1178,7 +1181,7 @@ saveRDS(lemmatized_migration_terms, "data/lemmatized_migration_terms.rds")
 
 ```
 
-Outdated workflow
+# Outdated workflow
 ```{r}
 terms_lemma <- readRDS("data/lemmatized_migration_terms.rds")
 doc_id_by_date <- readRDS("data/doc_id_by_date.rds")
