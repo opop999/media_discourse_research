@@ -438,6 +438,95 @@ ggsave("graphs/migration_content_proportion_by_media_type.png", device = "png",
        width = 1920, height = 1080, units = "px")
 
 ```
+#############################################################
+Version of graph which uses events as a caption to the graph
+```{r}
+
+graph_settings <- list(dates = c(as.Date("2015-05-11"),
+                        as.Date("2015-09-02"),
+                        as.Date("2016-09-21"),
+                        as.Date("2016-11-03"),
+                        as.Date("2018-01-27"),
+                        as.Date("2018-06-10"),
+                        as.Date("2019-01-01"),
+                        as.Date("2020-03-11"),
+                        as.Date("2022-02-24")),
+events = c(
+1:9
+), 
+events_long_description = c(
+  expression(
+    paste(
+      bold("(1)"), "EU Commission proposes refugee quotas, ",
+      bold("(2) "), "Alan Kurdi drowns in the Mediterranean Sea, ",
+      bold("(3) "), "Egypt shipwreck kills hundreds, ",
+      bold("(4) "), "Two shipwrecks off Libyan coast, ",
+      bold("(5) "), "Czech Republic re-elects Miloš Zeman as president, ",
+      bold("(6) "), "Italy and Malta deny entry to NGO ship Aquarius, ",
+      bold("(7) "), "EU reports lowest number of migrant arrivals in five years, ",
+      bold("(8) "), "Covid-19 pandemic declared, ",
+      bold("(9) "), "Russia invades Ukraine."
+    )
+  )
+),
+                      bw_graph_adjust = c(
+                        -18,
+                        -23,
+                        -19,
+                        -24,
+                        -20,
+                        -18,
+                        -17,
+                        -21,
+                        -20
+                      ),
+bw_graph_txt_size = 3
+                      )
+
+
+
+combined_counts_grouped %>% 
+  ggplot(aes(x = month, y = migration_prop, linetype = media_type)) +
+    geom_line() +
+    geom_vline(xintercept = as.numeric(graph_settings$dates[1:length(graph_settings$dates)]), linetype = 2, linewidth = 0.13) +
+    geom_text(aes(x = graph_settings$dates[1], y = 0, hjust = 0.9, label = graph_settings$events[1]), vjust = graph_settings$bw_graph_adjust[1], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[2], y = 0, hjust = 0.5, label = graph_settings$events[2]), vjust = graph_settings$bw_graph_adjust[2], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[3], y = 0, hjust = 0.5, label = graph_settings$events[3]), vjust = graph_settings$bw_graph_adjust[3], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[4], y = 0, hjust = 0.5, label = graph_settings$events[4]), vjust = graph_settings$bw_graph_adjust[4], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[5], y = 0, hjust = 0.5, label = graph_settings$events[5]), vjust = graph_settings$bw_graph_adjust[5], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[6], y = 0, hjust = 0.5, label = graph_settings$events[6]), vjust = graph_settings$bw_graph_adjust[6], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[7], y = 0, hjust = 0.5, label = graph_settings$events[7]), vjust = graph_settings$bw_graph_adjust[7], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[8], y = 0, hjust = 0.5, label = graph_settings$events[8]), vjust = graph_settings$bw_graph_adjust[8], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    geom_text(aes(x = graph_settings$dates[9], y = 0, hjust = 0.5, label = graph_settings$events[9]), vjust = graph_settings$bw_graph_adjust[9], size = graph_settings$bw_graph_txt_size, check_overlap = TRUE) +
+    ylab(element_blank()) +
+    xlab(element_blank()) +
+    labs(caption = graph_settings$events_long_description) +
+    theme_classic() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1),
+          plot.title = element_text(face = "bold", size = 7),
+          axis.title.y = element_text(size = 8),
+          plot.caption = element_text(size = 3),
+          legend.title = element_blank(),
+          legend.text = element_text(size = 6, face = "bold"),
+          legend.background = element_rect(fill = NA),
+          legend.position = c(0.725, 0.8),
+          plot.margin = margin(7,30,3,5, "pt")) +
+    scale_x_date(date_breaks = "6 months", date_labels = "%m-%y") +
+    coord_cartesian(xlim = c(start_date, end_date + 120), expand = FALSE) +
+    scale_linetype_discrete(limits = c("alternative", "mainstream"),
+                            labels = c("Alternative media","Mainstream media")) +
+    scale_y_continuous(
+    expand = c(0, 0),
+    breaks = seq(0, 1, 0.1),
+    labels = paste0(seq(0, 100, 10), "%"),
+    limits = c(0, 1)
+    )
+
+ggsave("graphs/test.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+
+
+```
 
 
 ## Step 1.3: Clustering
