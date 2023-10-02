@@ -1,0 +1,152 @@
+---
+title: "When is a crisis really a crisis? <br><br> Using NLP and corpus linguistic methods to reveal differences in migration discourse across Czech media"
+author: |
+        | Irene Elmerot
+        | Stockholm University
+        |
+        | Ondrej Pekacek
+        | Charles University
+        |
+
+date: | 
+      | October 18-20, 2023
+      | Slovko 2023
+      | Bratislava
+      
+output:
+  revealjs::revealjs_presentation:
+    self_contained: true
+    theme: white
+    css: style.css
+    center: false
+    transition: slide
+    reveal_options:
+      slideNumber: true
+      width: 1920
+      height: 1080
+bibliography: references_slovko.bib
+nocite: |
+  @wijffels_udpipe_2023, @stetka_nobody_2021, @douglas_definitions_2019, @baker_useful_2008, @straka_udpipe_2018, @cvrcek_online2_now_2022, @cvrcek_no_2022, @newton_media_as_media_nodate
+csl: apa.csl
+---
+
+# Background
+
+- Exploring Czech media discourse of **refugees, asylum seekers, immigrants, and migrants (RASIM)** in **European migration crisis** context, 2015--2023. <br><br>
+
+- Addressing a gap in the **computational** analysis of large datasets of media coverage of **migration** in the Czech Republic. 
+
+# Research design
+
+- Open, transparent, and replicable study (also for other languages / regions). <br><br>
+
+- Investigating differences in Czech **mainstream vs. alternative media's language use:** 
+ - Terms for voluntary vs. forced **migration**.
+ - Presence of actors in **RASIM** news (2015--2016 vs. 2022--2023).
+ - Dominant collocates of **RASIM** terms (2015--2016 vs. 2022--2023).
+
+# Methodology
+
+- Use of computational methods: **Corpus Linguistics (CL)** and **Natural Language Processing (NLP)**. <br><br>
+
+- Construction and corpus analysis: **~1 million** documents (January 2015--February 2023) = 800 million tokens. <br><br>
+
+- Corpus labeled as **mainstream or alternative media**; data cleaned for advanced NLP.
+
+# Analysis
+
+**Graph 1: Migration content proportion across media types. Graphs in color. Use Plotly if straightforward.**
+
+# Analysis 1: Word Frequencies
+
+- Tracked **changes in language** use over time and across media types using **lemma categorization** and **monthly frequencies**.
+
+## 
+**Graph 2: Alt & Mainst Corpus, whole period**
+
+# Analysis 2: Named Entity Recognition (NER)
+
+- Used NameTag 2 model for NER to identify **key entities** in discourse.<br><br>
+
+**NOTE: All graphs: highlight words that appear in both periods. All graphs will be full-screen**
+
+##
+**Graph 3: TOP 15 NER - ALT Media - 1st period.**
+
+## 
+**Graph 4: TOP 15 NER - ALT Media - 3rd period.**
+
+##
+**EXTRA Graph 1: TOP 15 NER - Mainst Media - 1st period.**
+
+##
+**EXTRA Graph 2: TOP 15 NER - Mainst Media - 3rd period.**
+
+# Analysis 3: Collocations
+
+- Conducted collocation analysis to uncover term **associations' shifts**.
+
+## 
+**Graph 5: TOP 15 Collocs - ALT Media- MIGRANT - 1st period.**
+
+## 
+**Graph 6:  TOP 15 Collocs - ALT Media - MIGRANT - 3rd period.**
+
+##
+**EXTRA Graph 3: TOP 15 Collocs - Mainst Media- MIGRANT - 1st period.**
+
+##
+**EXTRA Graph 4: TOP 15 Collocs - Mainst Media - MIGRANT - 3rd period.**
+
+# Key Findings
+
+- Alternative media's heightened use of **voluntary migration** terms and references to '**the West**' and **international actors**.<br><br>
+
+- Shift in collocations of migration terms between periods, with a distinct focus on **alternative and mainstream media**.<br><br>
+
+- Emerging media discourse shift during the crisis following February 2022:
+  - Increased mentions of **specific geographical names**.
+  - “Illegal” becomes a stronger collocate to “immigrant” than to “migrant”.
+  - The word “quota“ disappears as a prominent collocation.
+
+# Conclusions, limitations, and possibilities
+
+- The 2022 crisis was portrayed as a **close** reality, while the 2015 crisis was more **elusive**.<br><br>
+
+- Insights into **far-right media communication**, **anti-immigrant sentiments** and **responsible migration reporting**.<br><br>
+
+- Calls for further Czech/international migration discourse research and interdisciplinary approach:
+  - Unaddressed verbal aspects (e.g. metaphors).
+  - Social media data.
+
+# Acknowledgements
+
+- Gunvor och Josef Anérs Stiftelse (application number FB22-0088)<br><br>
+
+- Specific University Research (SVV) grant no. 260 728
+
+# Get in touch with us :)
+
+- Irene:
+  - Department of Slavic and Baltic Studies Finnish Dutch and German, Stockholm University
+  - Researchgate: [Irene_Elmerot](researchgate.net/profile/Irene_Elmerot)
+  - Mastodon: [elmerot](https://mastodon.nu/@elmerot)
+  - irene.elmerot@slav.su.se <br><br>
+
+- Ondrej:
+  - Faculty of the Social Sciences, Charles University
+  - Website: [https://opop999.github.io](https://opop999.github.io)
+  - LinkedIn: [ondrej-pekacek](https://linkedin.com/in/ondrej-pekacek)
+  - ondrej.pekacek@fsv.cuni.cz
+
+# References
+
+
+
+
+  
+  
+
+
+
+ 
