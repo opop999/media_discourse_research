@@ -100,7 +100,7 @@ csl: apa.csl
 
 # Key Findings
 
-- Alternative media's heightened use of **voluntary migration** terms and references to '**the West**' and **international actors**.<br><br>
+- Alternative media's heightened use of **voluntary migration** terms and references to “**the West**” and **international actors**.<br><br>
 
 - Shift in collocations of migration terms between the three periods, with a distinct focus on differences between **alternative and mainstream media**.<br><br>
 
@@ -109,20 +109,20 @@ csl: apa.csl
   - “Illegal” becomes a stronger collocate to “immigrant” than to “migrant”.
   - The word “quota” disappears as a prominent collocation.
 
-# Conclusions, limitations, and possibilities
+# Conclusions, limitations and possibilities
 
 - The 2022 crisis was (is?) portrayed as a **close** reality, while the 2015 crisis was more **elusive**.<br><br>
 
 - Insights into **far-right media communication**, **anti-immigrant sentiments** and **responsible migration reporting**.<br><br>
 
-- Calls for further Czech/international migration discourse research and interdisciplinary approach:
+- Calls for further Czech / international migration discourse research and interdisciplinary approach:
   - Unaddressed verbal aspects (imperfective / perfective).
   - Unaddressed lexical aspects (e.g. metaphors).
   - Social media data.
 
 # Acknowledgements
 
-- Gunvor och Josef Anérs Stiftelse (application number FB22-0088)<br><br>
+- Gunvor och Josef Anérs Stiftelse (application number FB22-0088).<br><br>
 
 - Specific University Research (SVV) grant no. 260 728.
 
