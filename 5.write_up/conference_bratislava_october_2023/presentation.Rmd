@@ -4,12 +4,12 @@ author: |
         | Irene Elmerot
         | Stockholm University
         |
-        | Ondrej Pekacek
+        | Ondřej Pekáček
         | Charles University
         |
 
 date: | 
-      | October 18-20, 2023
+      | October 18--20, 2023
       | Slovko 2023
       | Bratislava
       
@@ -32,7 +32,7 @@ csl: apa.csl
 
 # Background
 
-- Exploring Czech media discourse of **refugees, asylum seekers, immigrants, and migrants (RASIM)** in **European migration crisis** context, 2015--2023. <br><br>
+- Exploring Czech media discourse of **refugees, asylum seekers, immigrants, and migrants (RASIM)** in an **European migration crisis** context, 2015--2023. <br><br>
 
 - Addressing a gap in the **computational** analysis of large datasets of media coverage of **migration** in the Czech Republic. 
 
@@ -41,9 +41,9 @@ csl: apa.csl
 - Open, transparent, and replicable study (also for other languages / regions). <br><br>
 
 - Investigating differences in Czech **mainstream vs. alternative media's language use:** 
- - Terms for voluntary vs. forced **migration**.
- - Presence of actors in **RASIM** news (2015--2016 vs. 2022--2023).
- - Dominant collocates of **RASIM** terms (2015--2016 vs. 2022--2023).
+                - Terms for voluntary vs. forced **migration**.
+                - Presence of actors in **RASIM** news (2015--2016 vs. 2022--2023).
+                - Dominant collocates of **RASIM** terms (2015--2016 vs. 2022--2023).
 
 # Methodology
 
@@ -55,7 +55,7 @@ csl: apa.csl
 
 # Analysis
 
-**Graph 1: Migration content proportion across media types. Graphs in color. Use Plotly if straightforward.**
+**Graph 1: Migration content proportion across media types.** NOTE: Graphs in color. Use Plotly if straightforward.
 
 # Analysis 1: Word Frequencies
 
@@ -102,28 +102,29 @@ csl: apa.csl
 
 - Alternative media's heightened use of **voluntary migration** terms and references to '**the West**' and **international actors**.<br><br>
 
-- Shift in collocations of migration terms between periods, with a distinct focus on **alternative and mainstream media**.<br><br>
+- Shift in collocations of migration terms between the three periods, with a distinct focus on differences between **alternative and mainstream media**.<br><br>
 
 - Emerging media discourse shift during the crisis following February 2022:
   - Increased mentions of **specific geographical names**.
   - “Illegal” becomes a stronger collocate to “immigrant” than to “migrant”.
-  - The word “quota“ disappears as a prominent collocation.
+  - The word “quota” disappears as a prominent collocation.
 
 # Conclusions, limitations, and possibilities
 
-- The 2022 crisis was portrayed as a **close** reality, while the 2015 crisis was more **elusive**.<br><br>
+- The 2022 crisis was (is?) portrayed as a **close** reality, while the 2015 crisis was more **elusive**.<br><br>
 
 - Insights into **far-right media communication**, **anti-immigrant sentiments** and **responsible migration reporting**.<br><br>
 
 - Calls for further Czech/international migration discourse research and interdisciplinary approach:
-  - Unaddressed verbal aspects (e.g. metaphors).
+  - Unaddressed verbal aspects (imperfective / perfective).
+  - Unaddressed lexical aspects (e.g. metaphors).
   - Social media data.
 
 # Acknowledgements
 
 - Gunvor och Josef Anérs Stiftelse (application number FB22-0088)<br><br>
 
-- Specific University Research (SVV) grant no. 260 728
+- Specific University Research (SVV) grant no. 260 728.
 
 # Get in touch with us :)
 
@@ -133,7 +134,7 @@ csl: apa.csl
   - Mastodon: [elmerot](https://mastodon.nu/@elmerot)
   - irene.elmerot@slav.su.se <br><br>
 
-- Ondrej:
+- Ondřej:
   - Faculty of the Social Sciences, Charles University
   - Website: [https://opop999.github.io](https://opop999.github.io)
   - LinkedIn: [ondrej-pekacek](https://linkedin.com/in/ondrej-pekacek)
