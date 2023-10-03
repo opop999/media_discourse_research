@@ -41,9 +41,9 @@ csl: apa.csl
 - Open, transparent, and replicable study (also for other languages / regions). <br><br>
 
 - Investigating differences in Czech **mainstream vs. alternative media's language use:** 
-                - Terms for voluntary vs. forced **migration**.
-                - Presence of actors in **RASIM** news (2015--2016 vs. 2022--2023).
-                - Dominant collocates of **RASIM** terms (2015--2016 vs. 2022--2023).
+  - Terms for voluntary vs. forced **migration**.
+  - Presence of actors in **RASIM** news (2015--2016 vs. 2022--2023).
+  - Dominant collocates of **RASIM** terms (2015--2016 vs. 2022--2023).
 
 # Methodology
 
@@ -51,11 +51,11 @@ csl: apa.csl
 
 - Construction and corpus analysis: **~1 million** documents (January 2015--February 2023) = 800 million tokens. <br><br>
 
-- Corpus labeled as **mainstream or alternative media**; data cleaned for advanced NLP.
+- 156 million tokens in documents labeled as **mainstream or alternative media**; data cleaned for advanced NLP.
 
 # Analysis
 
-**Graph 1: Migration content proportion across media types.** NOTE: Graphs in color. Use Plotly if straightforward.
+# {data-background-image="graphics/migration_content_proportion_by_media_type.png"}
 
 # Analysis 1: Word Frequencies
 
@@ -68,10 +68,9 @@ csl: apa.csl
 
 - Used NameTag 2 model for NER to identify **key entities** in discourse.<br><br>
 
-**NOTE: All graphs: highlight words that appear in both periods. All graphs will be full-screen**
-
 ##
 **Graph 3: TOP 15 NER - ALT Media - 1st period.**
+**NOTE to Ondra: All NER/Colloc graphs: highlight words that appear in both periods.**
 
 ## 
 **Graph 4: TOP 15 NER - ALT Media - 3rd period.**
