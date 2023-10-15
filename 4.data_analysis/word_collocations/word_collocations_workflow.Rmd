@@ -338,3 +338,116 @@ ggsave(graph, filename = paste0("graphs/", periods[[i]], "_", term, ".png"), dev
 }
   
 ```
+
+# Graph chosen for the article, modified with translations on the opposite side of the axis
+```{r}
+
+stats_mainstream_3 <- readRDS("data/stats_mainstream_3.rds")
+
+collocation_labels <- list(
+  "czech" = c(
+    "Legální",
+    "Počet",
+    "Hranice",
+    "Země",
+    "Zadržet",
+    "Česko",
+    "Převaděč",
+    "Policista",
+    "Český",
+    "Člověk",
+    "Policie",
+    "Slovensko",
+    "Mluvčí",
+    "Kontrola",
+    "Sýrie",
+    "Velký",
+    "Zajistit",
+    "Republika",
+    "Zadržený",
+    "Území",
+    "Dostat",
+    "Ukrajina",
+    "Příliv",
+    "Evropa",
+    "Uprchlík",
+    "Stát",
+    "Přicházet",
+    "Poslední",
+    "Kraj",
+    "Odhalit"
+  ),
+  "english" = c(
+    "Legal",
+    "Number",
+    "Border",
+    "Country",
+    "Detain",
+    "Czechia",
+    "Smuggler",
+    "Policeman",
+    "Czech",
+    "Person",
+    "Police",
+    "Slovakia",
+    "Spokesperson",
+    "Control",
+    "Syria",
+    "Large",
+    "Secure",
+    "Republic",
+    "Detained",
+    "Territory",
+    "Get",
+    "Ukraine",
+    "Influx",
+    "Europe",
+    "Refugee",
+    "State",
+    "Arrive",
+    "Last",
+    "Region",
+    "Uncover"
+  )
+)
+
+
+stats_mainstream_3[["migrant"]] %>%
+  tibble::enframe("collocate", "measure") %>%
+  mutate(collocate = fct_reorder(collocate, measure)) %>%
+  slice_max(order_by = measure, n = 30) %>%
+  bind_cols("original_label" = collocation_labels$czech,
+            "translated" = collocation_labels$english) %>% 
+  ggplot(aes(x = measure, y = collocate, label = round(measure, digits = 1))) +
+    geom_col() +
+    geom_label(size = 1.7, label.padding = unit(0.09, "lines")) +
+    theme_classic() +
+    labs(y = element_blank(), x = "LogDice", title = paste("Top 30 collocates of",
+                                                           str_to_title("migrant"),
+                                                           "in Czech",
+                                                           periods_media_type[[4]],
+                                                           "Media,",
+                                                           periods_span[[3]])) +
+    scale_x_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 14, 1),
+  labels = seq(0, 14, 1),
+  limits = c(0, 15)
+  ) +
+    scale_y_discrete(
+    labels = rev(collocation_labels$czech)
+  ) +
+  geom_text(aes(label = collocation_labels$english, x = 0.1, y = collocate, fontface=1), color = "white", size = 2.5, hjust = 0) +
+  # geom_vline(xintercept = 13) + 
+  theme(plot.title = element_text(face = "bold", size = 7),
+        axis.title.x = element_text(size = 8),
+        plot.margin = margin(7,30,3,5, "pt"))
+
+
+ggsave(filename = "collocations_minimalist_labels.png", device = "png", width = 1920, height = 1080, units = "px")
+
+
+```
+
+
+

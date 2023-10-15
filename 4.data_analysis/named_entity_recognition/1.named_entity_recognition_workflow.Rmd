@@ -370,3 +370,99 @@ write_csv(dfs_list, paste0("data/summary_ner.csv"))
 
 ```
 
+# Graph chosen for the article, modified with translations on the opposite side of the axis
+```{r}
+ner_labels <- list(
+  "czech" = c(
+    "Evropa",
+    "EU",
+    "Rusko",
+    "Německo",
+    "Sýrie",
+    "USA",
+    "Česká republika",
+    "Ukrajina",
+    "Evropská unie",
+    "ČR",
+    "Islámský stát",
+    "Řecko",
+    "Turecko",
+    "Západ",
+    "Francie",
+    "Česko",
+    "Miloš Zeman",
+    "NATO",
+    "Afrika",
+    "ČSSD",
+    "Irák",
+    "Maďarsko",
+    "Praha",
+    "Itálie",
+    "Brusel",
+    "Čína",
+    "Spojené státy",
+    "ODS",
+    "OSN",
+    "Paříž"
+  ),
+  "english" = c(
+    "Europe",
+    "EU",
+    "Russia",
+    "Germany",
+    "Syria",
+    "USA",
+    "Czech Republic",
+    "Ukraine",
+    "European Union",
+    "CZ",
+    "Islamic State",
+    "Greece",
+    "Turkey",
+    "West",
+    "France",
+    "Czechia",
+    "Miloš Zeman",
+    "NATO",
+    "Africa",
+    "CSSD Party",
+    "Iraq",
+    "Hungary",
+    "Prague",
+    "Italy",
+    "Brussels",
+    "China",
+    "United States",
+    "ODS Party",
+    "UN",
+    "Paris"
+  )
+)
+
+  ner_alternative_1 %>%
+    slice_max(n_ipm, n = 30) %>% 
+    mutate(ent_text_stemmed = reorder(ent_text_stemmed, n_ipm)) %>% 
+    ggplot(aes(x = n_ipm, y = ent_text_stemmed)) +
+    geom_col() +
+    ylab(element_blank()) +
+    xlab("Occurences per million words") +
+    labs(title = "Top 30 Named Entities in Czech Alternative Media, January 2015-December 2015") +
+    theme_classic() +
+    theme(plot.title = element_text(face = "bold", size = 8),
+          axis.title.y = element_text(size = 8),
+          plot.margin = margin(7,30,3,5, "pt")) +
+    scale_x_continuous(
+      expand = c(0, 0),
+      breaks = seq(0, 10000, 250),
+      labels = seq(0, 10000, 250),
+      limits = c(0, 2750)
+    ) +
+    scale_y_discrete(
+    labels = rev(ner_labels$czech)
+  ) +
+    geom_text(aes(label = ner_labels$english, x = 10, y = ent_text_stemmed, fontface=2), color = "white", size = 2.5, hjust = 0)
+
+ggsave(filename = "ner_minimalist_labels.png", device = "png", width = 3075, height = 1250, units = "px")
+```
+
+
