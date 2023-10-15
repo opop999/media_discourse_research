@@ -4,12 +4,9 @@ author: |
         | Irene Elmerot
         | Stockholm University
         |
-        | Ondřej Pekáček
-        | Charles University
-        |
 
 date: | 
-      | October 18--20, 2023
+      | October 19, 2023
       | Slovko 2023
       | Bratislava
       
@@ -61,41 +58,31 @@ csl: apa.csl
 
 - Tracked **changes in language** use over time and across media types using **lemma categorization** and **monthly frequencies**.
 
-## 
-**Graph 2: Alt & Mainst Corpus, whole period**
+## {data-background-image="graphics/term_frequencies_by_media_type.png"}
 
 # Analysis 2: Named Entity Recognition (NER)
 
 - Used NameTag 2 model for NER to identify **key entities** in discourse.<br><br>
 
-##
-**Graph 3: TOP 15 NER - ALT Media - 1st period.**
-**NOTE to Ondra: All NER/Colloc graphs: highlight words that appear in both periods.**
+## **Graph 3: TOP 15 NER - ALT Media - 1st period.**
 
-## 
-**Graph 4: TOP 15 NER - ALT Media - 3rd period.**
+## **Graph 4: TOP 15 NER - ALT Media - 3rd period.**
 
-##
-**EXTRA Graph 1: TOP 15 NER - Mainst Media - 1st period.**
+## **EXTRA Graph 1: TOP 15 NER - Mainst Media - 1st period.**
 
-##
-**EXTRA Graph 2: TOP 15 NER - Mainst Media - 3rd period.**
+## **EXTRA Graph 2: TOP 15 NER - Mainst Media - 3rd period.**
 
 # Analysis 3: Collocations
 
 - Conducted collocation analysis to uncover term **associations' shifts**.
 
-## 
-**Graph 5: TOP 15 Collocs - ALT Media- MIGRANT - 1st period.**
+## **Graph 5: TOP 15 Collocs - ALT Media- MIGRANT - 1st period.**
 
-## 
-**Graph 6:  TOP 15 Collocs - ALT Media - MIGRANT - 3rd period.**
+## **Graph 6:  TOP 15 Collocs - ALT Media - MIGRANT - 3rd period.**
 
-##
-**EXTRA Graph 3: TOP 15 Collocs - Mainst Media- MIGRANT - 1st period.**
+## **EXTRA Graph 3: TOP 15 Collocs - Mainst Media- MIGRANT - 1st period.**
 
-##
-**EXTRA Graph 4: TOP 15 Collocs - Mainst Media - MIGRANT - 3rd period.**
+## **EXTRA Graph 4: TOP 15 Collocs - Mainst Media - MIGRANT - 3rd period.**
 
 # Key Findings
 
@@ -123,21 +110,13 @@ csl: apa.csl
 
 - Gunvor och Josef Anérs Stiftelse (application number FB22-0088).<br><br>
 
-- Specific University Research (SVV) grant no. 260 728.
-
-# Get in touch with us :)
+# Get in touch :)
 
 - Irene:
   - Department of Slavic and Baltic Studies Finnish Dutch and German, Stockholm University
   - Researchgate: [Irene_Elmerot](researchgate.net/profile/Irene_Elmerot)
   - Mastodon: [elmerot](https://mastodon.nu/@elmerot)
   - irene.elmerot@slav.su.se <br><br>
-
-- Ondřej:
-  - Faculty of the Social Sciences, Charles University
-  - Website: [https://opop999.github.io](https://opop999.github.io)
-  - LinkedIn: [ondrej-pekacek](https://linkedin.com/in/ondrej-pekacek)
-  - ondrej.pekacek@fsv.cuni.cz
 
 # References
 

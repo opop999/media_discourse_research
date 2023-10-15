@@ -1052,6 +1052,7 @@ ggsave("graphs/mainst_corpus.png", device = "png",
 alt_frequency_summary$media_type <- "Alternative Media"
 mainst_frequency_summary$media_type <- "Mainstream Media"
 
+# B&W graph for publication
 alt_frequency_summary %>% 
   bind_rows(mainst_frequency_summary) %>% 
   # unite("category_by_type", all_of(c("media_type", "category"))) %>% 
@@ -1092,6 +1093,58 @@ alt_frequency_summary %>%
   ) 
 
 ggsave("graphs/alt_and_mainst_corpus.png", device = "png",
+       width = 1920, height = 1080, units = "px")
+```
+
+
+```{r}
+# Color graph for presentation
+alt_frequency_summary %>% 
+  bind_rows(mainst_frequency_summary) %>% 
+  ggplot(aes(x = date, y = ipm_freq)) +
+  geom_line(aes(color = category), size = 0.4) +
+  facet_wrap(~ media_type, nrow = 2) +
+  geom_vline(xintercept = as.numeric(key_dates[1:length(key_dates)]), linetype = 2, linewidth = 0.1) +
+  geom_text(aes(x = key_dates[1], y = 0, label = names(key_dates)[1]), vjust = -17, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[2], y = 0, label = names(key_dates)[2]), vjust = -22, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[3], y = 0, label = names(key_dates)[3]), vjust = -13, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[4], y = 0, label = names(key_dates)[4]), vjust = -6, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[5], y = 0, label = names(key_dates)[5]), vjust = -15, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[6], y = 0, label = names(key_dates)[6]), vjust = -19, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[7], y = 0, label = names(key_dates)[7]), vjust = -22, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[8], y = 0, label = names(key_dates)[8]), vjust = -11, size = 1.8, check_overlap = TRUE) +
+  geom_text(aes(x = key_dates[9], y = 0, label = names(key_dates)[9]), vjust = -5, size = 1.8, check_overlap = TRUE) +
+  ylab("Occurrences per million words") +
+  xlab(element_blank()) +
+  labs(title = "Term frequencies by media type, January 2015-February 2023",
+       subtitle = "Relative monthly occurences of migration & refugee terms, aggregated by month and split by media type",
+       caption = "Data: Newton Media Archive, Media types: Vaclav Cvrcek & Jan Henys (2023)") +
+  theme_classic() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.text = element_text(size = 7),
+        plot.background = element_rect(fill = "grey90"),
+        plot.title = element_text(face = "bold", size = 10),
+        plot.subtitle = element_text(face = "italic", size = 8),
+        plot.caption = element_text(size = 4.5),
+        axis.title.y = element_text(size = 8),
+        legend.title = element_blank(),
+        legend.text = element_text(size = 6),
+        legend.key = element_blank(),
+        legend.background = element_rect(fill = NA),
+        legend.position = c(0.73, 0.91),
+        plot.margin = margin(7,30,3,5, "pt"))  +
+  scale_x_date(date_breaks = "6 months", date_labels = "%m-%y") +
+  coord_cartesian(xlim = c(start_date, end_date + 120), expand = FALSE) +
+  scale_color_discrete(limits = c("migration_term", "refugee_term"),
+                          labels = c("Migration Terms","Refugee Terms")) +
+  scale_y_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 250, 25),
+  labels = seq(0, 250, 25),
+  limits = c(0, 250)
+  ) 
+
+ggsave("../../5.write_up/conference_bratislava_october_2023/graphics/term_frequencies_by_media_type.png", device = "png",
        width = 1920, height = 1080, units = "px")
 ```
 
