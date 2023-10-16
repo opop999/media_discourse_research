@@ -76,13 +76,13 @@ csl: apa.csl
 
 - Conducted collocation analysis to uncover term **associations' shifts**.
 
-## **Graph 5: TOP 15 Collocs - ALT Media- MIGRANT - 1st period.**
+## {data-background-image="graphics/collocs_alternative_1.png"}
 
-## **Graph 6:  TOP 15 Collocs - ALT Media - MIGRANT - 3rd period.**
+## {data-background-image="graphics/collocs_alternative_3.png"}
 
-## **EXTRA Graph 3: TOP 15 Collocs - Mainst Media- MIGRANT - 1st period.**
+## {data-background-image="graphics/collocs_mainstream_1.png"}
 
-## **EXTRA Graph 4: TOP 15 Collocs - Mainst Media - MIGRANT - 3rd period.**
+## {data-background-image="graphics/collocs_mainstream_3.png"}
 
 # Key Findings
 

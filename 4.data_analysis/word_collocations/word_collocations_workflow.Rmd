@@ -416,8 +416,8 @@ stats_mainstream_3[["migrant"]] %>%
   tibble::enframe("collocate", "measure") %>%
   mutate(collocate = fct_reorder(collocate, measure)) %>%
   slice_max(order_by = measure, n = 30) %>%
-  bind_cols("original_label" = collocation_labels$czech,
-            "translated" = collocation_labels$english) %>% 
+  # bind_cols("original_label" = collocation_labels$czech,
+  #           "translated" = collocation_labels$english) %>% 
   ggplot(aes(x = measure, y = collocate, label = round(measure, digits = 1))) +
     geom_col() +
     geom_label(size = 1.7, label.padding = unit(0.09, "lines")) +
@@ -447,6 +447,203 @@ stats_mainstream_3[["migrant"]] %>%
 ggsave(filename = "collocations_minimalist_labels.png", device = "png", width = 1920, height = 1080, units = "px")
 
 
+```
+
+# Presentation-style graph
+```{r}
+# Label translations
+labels <- list(
+  mainstream_1 = list(
+    "czech" = c(
+      "Země",
+      "Evropa",
+      "Uprchlík",
+      "Hranice",
+      "Legální",
+      "Počet",
+      "Příliv",
+      "Ekonomický",
+      "Německo",
+      "Člověk",
+      "Stát",
+      "Policie",
+      "Evropský",
+      "Tisíc",
+      "Maďarsko"
+    ),
+    "english" = c(
+      "Country",
+      "Europe",
+      "Refugee",
+      "Border",
+      "Legal",
+      "Number",
+      "Influx",
+      "Economic",
+      "Germany",
+      "Person",
+      "State",
+      "Police",
+      "European",
+      "Thousand",
+      "Hungary"
+    )
+  ),
+  mainstream_3 = list(
+    "czech" = c(
+      "Legální",
+      "Počet",
+      "Hranice",
+      "Země",
+      "Zadržet",
+      "Česko",
+      "Převaděč",
+      "Policista",
+      "Český",
+      "Člověk",
+      "Policie",
+      "Slovensko",
+      "Mluvčí",
+      "Kontrola",
+      "Sýrie"
+    ),
+    "english" = c(
+      "Legal",
+      "Number",
+      "Border",
+      "Country",
+      "Detain",
+      "Czechia",
+      "Smuggler",
+      "Policeman",
+      "Czech",
+      "Person",
+      "Police",
+      "Slovakia",
+      "Spokesperson",
+      "Control",
+      "Syria"
+    )
+  ),
+  alternative_1 = list(
+    "czech" = c(
+      "Země",
+      "Evropa",
+      "Ekonomický",
+      "Uprchlík",
+      "Stát",
+      "Příliv",
+      "Legální",
+      "Německo",
+      "Evropský",
+      "Hranice",
+      "EU",
+      "Člověk",
+      "Počet",
+      "Velký",
+      "Kvóta"
+    ),
+    "english" = c(
+      "Country",
+      "Europe",
+      "Economic",
+      "Refugee",
+      "State",
+      "Influx",
+      "Legal",
+      "Germany",
+      "European",
+      "Border",
+      "EU",
+      "Person",
+      "Number",
+      "Large",
+      "Quota"
+    )
+    
+  ),
+  alternative_3 = list(
+    "czech" = c(
+      "Země",
+      "Legální",
+      "Hranice",
+      "Ukrajina",
+      "Ukrajinský",
+      "Evropa",
+      "Počet",
+      "Člověk",
+      "Vláda",
+      "Velký",
+      "Milión",
+      "Stát",
+      "Uprchlík",
+      "Český",
+      "Příliv"
+    ),
+    "english" = c(
+      "Country",
+      "Legal",
+      "Border",
+      "Ukraine",
+      "Ukrainian",
+      "Europe",
+      "Number",
+      "Person",
+      "Government",
+      "Large",
+      "Million",
+      "State",
+      "Refugee",
+      "Czech",
+      "Influx"
+    )
+  )
+)
+
+common_mainstream <- intersect(labels[["alternative_1"]][["czech"]],
+                               labels[["alternative_3"]][["czech"]])
+
+# bold_labels <- ifelse(levels(mtcars$cars) %in% common_mainstream, yes = "bold", no = "plain")
+
+```
+
+
+```{r}
+stats_alternative_3[["migrant"]] %>%
+  tibble::enframe("collocate", "measure") %>%
+  mutate(collocate = fct_reorder(collocate, measure)) %>%
+  slice_max(order_by = measure, n = 15) %>%
+  bind_cols("original_label" = labels[["alternative_3"]][["czech"]],
+            "translated" = labels[["alternative_3"]][["english"]]) %>%
+  ggplot(aes(x = measure, y = collocate, label = round(measure, digits = 1))) +
+    geom_col() +
+    geom_label(size = 1.7, label.padding = unit(0.09, "lines")) +
+    theme_classic() +
+    labs(y = element_blank(), x = "LogDice", title = paste("Top 15 collocates of",
+                                                           str_to_title("migrant"),
+                                                           "in Czech",
+                                                           periods_media_type[[1]],
+                                                           "Media,",
+                                                           periods_span[[3]]),
+         caption = "Data: Newton Media Archive, Media types: Vaclav Cvrcek & Jan Henys (2023)") +
+    scale_x_continuous(
+  expand = c(0, 0),
+  breaks = seq(0, 14, 1),
+  labels = seq(0, 14, 1),
+  limits = c(0, 15)
+  ) +
+    scale_y_discrete(
+    labels = rev(labels[["alternative_3"]][["czech"]])
+  ) +
+  geom_text(aes(label = labels[["alternative_3"]][["english"]], x = 0.1, y = collocate, fontface=1), color = "white", size = 2.5, hjust = 0) +
+  theme(axis.text = element_text(size = 7),
+        plot.title = element_text(face = "bold", size = 8),
+        plot.caption = element_text(size = 4.5),
+        axis.title.x = element_text(size = 8),
+        plot.margin = margin(7,30,3,5, "pt"))
+
+ggsave("../../5.write_up/conference_bratislava_october_2023/graphics/collocs_alternative_3.png", device = "png",
+       width = 1920, height = 1080, units = "px")
 ```
 
 
