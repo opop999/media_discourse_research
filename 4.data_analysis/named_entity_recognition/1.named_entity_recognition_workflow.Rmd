@@ -465,4 +465,105 @@ ner_labels <- list(
 ggsave(filename = "ner_minimalist_labels.png", device = "png", width = 3075, height = 1250, units = "px")
 ```
 
+# Presentation-style graph
+```{r}
+media_type <- "mainstream"
+period_nr <- 3
+period_type <- paste0(media_type,"_", period_nr)
+periods <- c("January 2015-December 2015", "January 2016-January 2022", "February 2022-February 2023")
+graph_color <- c("alternative" = "#fd7f6f", "mainstream" = "#b3d4ff")
+```
 
+
+```{r}
+# Copy the top entities to clipboard for easier translation
+period_data %>%
+    transmute(measure = n_ipm,
+              entity = reorder(ent_text_stemmed, n_ipm)) %>% 
+    slice_max(measure, n = 15) %>%
+  pull(entity) %>% 
+  stringr::str_to_title() %>% 
+  clipr::write_clip(object_type = "character", breaks = ",")
+```
+
+```{r}
+# Label translations
+labels <- list(
+  mainstream_1 = list(
+    "czech" = c(
+      "Evropa", "Německo", "Česko", "EU", "Sýrie", "Evropská Unie", "Česká Republika", "Praha", "Maďarsko", "Řecko", "Rusko", "Turecko", "Islámský Stát", "ČSSD", "Francie"
+    ),
+    "english" = c(
+     "Europe", "Germany", "Czechia", "EU", "Syria", "European Union", "Czech Republic", "Prague", "Hungary", "Greece", "Russia", "Turkey", "Islamic State", "ČSSD", "France"
+    )
+  ),
+  mainstream_3 = list(
+    "czech" = c(
+   "Ukrajina","Rusko","Česko","Praha","Česká Republika","Evropa","Kyjev","Evropská Unie","Německo","Polsko","Slovensko","ANO","EU","ODS","ČR"
+    ),
+    "english" = c(
+    "Ukraine", "Russia", "Czechia", "Prague", "Czech Republic", "Europe", "Kyiv", "Europ. Uni.", "Germany", "Poland", "Slovakia", "ANO", "EU", "ODS", "CZ"
+    )
+  ),
+  alternative_1 = list(
+    "czech" = c(
+      "Evropa", "EU", "Rusko", "Německo", "Sýrie", "USA", "Česká Republika", "Ukrajina", "Evropská Unie", "ČR", "Islámský Stát", "Řecko", "Turecko", "Západ", "Francie"
+    ),
+    "english" = c(
+      "Europe", "EU", "Russia", "Germany", "Syria", "USA", "Czech Republic", "Ukraine", "European Union", "CZ", "Islamic State", "Greece", "Turkey", "West", "France"
+    )
+  ),
+  alternative_3 = list(
+    "czech" = c(
+      "Ukrajina", "Rusko", "EU", "Evropa", "USA", "Německo", "NATO", "Česká Republika", "Západ", "ČR", "Česko", "Evropská Unie", "Čína", "Praha", "Polsko"
+    ),
+    "english" = c(
+      "Ukraine", "Russia", "EU", "Europe", "USA", "Germany", "NATO", "Czech Republic", "West", "CZ", "Czechia", "Europ. Uni.", "China", "Prague", "Poland"
+    )
+  )
+)
+```
+
+```{r}
+period_data <- readRDS(paste0("data/ner_", period_type, ".rds")) %>% 
+  transmute(measure = n_ipm,
+         entity = reorder(ent_text_stemmed, n_ipm)) %>% 
+  slice_max(measure, n = 15) %>% 
+  bind_cols("original_label" = labels[[period_type]][["czech"]],
+            "translated" = labels[[period_type]][["english"]])
+
+period_data %>% 
+  ggplot(aes(x = measure, y = entity, label = round(measure, digits = 1))) +
+    geom_col(fill = graph_color[[media_type]]) +
+    geom_label(size = 1.7, label.padding = unit(0.09, "lines")) +
+    theme_classic() +
+  labs(
+    y = element_blank(),
+    x = "Instances per million",
+    title = paste(
+      "Top 15 Named Entities",
+      "in Czech",
+      stringr::str_to_title(media_type),
+      "Media,",
+      periods[[period_nr]]
+    ),
+    caption = "Data: Newton Media Archive, Media types: Vaclav Cvrcek & Jan Henys (2023)") +
+    scale_x_continuous(
+  expand = c(0, 0),
+  limits = c(0, max(period_data$measure) + (max(period_data$measure)/15)),
+  breaks = seq(0, 5000, 500),
+  labels = seq(0, 5000, 500)
+  ) +
+    scale_y_discrete(
+    labels = rev(labels[[period_type]][["czech"]])
+  ) +
+  geom_text(aes(label = labels[[period_type]][["english"]], x = 10, y = entity, fontface=2), color = "white", size = 1.5, hjust = 0) +
+  theme(axis.text = element_text(size = 7),
+        plot.title = element_text(face = "bold", size = 8),
+        plot.caption = element_text(size = 4.5),
+        axis.title.x = element_text(size = 8),
+        plot.margin = margin(7,30,3,5, "pt"))
+
+ggsave(paste0("../../5.write_up/conference_bratislava_october_2023/graphics/ner_", period_type, ".png"), device = "png",
+       width = 1920, height = 1080, units = "px")
+```

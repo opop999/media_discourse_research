@@ -64,13 +64,13 @@ csl: apa.csl
 
 - Used NameTag 2 model for NER to identify **key entities** in discourse.<br><br>
 
-## **Graph 3: TOP 15 NER - ALT Media - 1st period.**
+## {data-background-image="graphics/ner_alternative_1.png"}
 
-## **Graph 4: TOP 15 NER - ALT Media - 3rd period.**
+## {data-background-image="graphics/ner_alternative_3.png"}
 
-## **EXTRA Graph 1: TOP 15 NER - Mainst Media - 1st period.**
+## {data-background-image="graphics/ner_mainstream_1.png"}
 
-## **EXTRA Graph 2: TOP 15 NER - Mainst Media - 3rd period.**
+## {data-background-image="graphics/ner_mainstream_3.png"}
 
 # Analysis 3: Collocations
 
